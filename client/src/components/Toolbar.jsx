@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, ChevronUp, ChevronDown, Menu, X } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
   color, setColor, 
@@ -17,8 +18,8 @@ const Toolbar = ({
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   
   const colors = [
-    '#ffffff', '#ef4444', '#f97316', '#f59e0b', '#10b981', 
-    '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'
+    '#6750A4', '#1C1B1F', '#ef4444', '#f97316', '#f59e0b', 
+    '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'
   ];
 
   const sizes = [2, 5, 10, 15, 20];
@@ -29,141 +30,158 @@ const Toolbar = ({
     { id: 'neon', icon: Sparkles, label: 'Neon' },
     { id: 'dotted', icon: Type, label: 'Dotted' },
     { id: 'eraser', icon: Eraser, label: 'Eraser' },
+    { id: 'pan', icon: Hand, label: 'Pan' },
   ];
 
-  const activeBrush = brushes.find(b => b.id === tool) || brushes[0];
-
   return (
-    <div className="fixed bottom-6 right-6 sm:bottom-auto sm:right-auto sm:top-6 sm:left-1/2 sm:-translate-x-1/2 z-50 flex flex-col items-end sm:items-center gap-3">
-      {/* Toggle Button - Hidden on Desktop */}
-      <button
+    <div className="fixed bottom-6 right-6 sm:bottom-auto sm:right-auto sm:top-6 sm:left-1/2 sm:-translate-x-1/2 z-50 flex flex-col items-end sm:items-center gap-4">
+      {/* Mobile Toggle Button - MD3 FAB Style */}
+      <Button
+        variant="fab"
+        size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        className={`sm:hidden flex items-center justify-center p-3 rounded-2xl bg-indigo-600 text-white shadow-2xl hover:bg-indigo-500 transition-all active:scale-95 z-50`}
-        title={isOpen ? "Close Toolbar" : "Open Toolbar"}
+        className="sm:hidden size-14 rounded-2xl z-50"
       >
-        {isOpen ? (
-          <X className="h-6 w-6" />
-        ) : (
-          <div className="flex items-center gap-2">
-            <activeBrush.icon className="h-6 w-6 text-white" />
-            <Menu className="h-4 w-4 opacity-50" />
-          </div>
-        )}
-      </button>
+        {isOpen ? <X className="size-6 text-white" /> : <Menu className="size-6 text-white" />}
+      </Button>
 
       {/* Toolbar Content */}
       {isOpen && (
-        <div className="flex flex-col sm:flex-row items-center gap-4 p-4 sm:px-6 sm:py-3 rounded-3xl sm:rounded-2xl bg-slate-900/90 sm:bg-slate-900/80 backdrop-blur-xl border border-white/10 shadow-2xl ring-1 ring-white/5 max-h-[70vh] sm:max-h-none overflow-y-auto sm:overflow-visible custom-scrollbar animate-in fade-in slide-in-from-bottom-4 sm:slide-in-from-top-4 duration-300">
+        <div className="flex flex-col sm:flex-row items-center gap-4 p-4 sm:px-6 sm:py-3 rounded-3xl bg-md-surface-container/95 backdrop-blur-xl border border-md-outline/10 md-shadow-2 animate-in fade-in zoom-in duration-300 max-h-[75vh] sm:max-h-none overflow-y-auto sm:overflow-visible custom-scrollbar">
+          
           {/* Tool Selection */}
-          <div className="flex flex-col sm:flex-row items-center gap-1 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-white/10 w-full sm:w-auto">
-            {brushes.map((b) => (
-              <button
-                key={b.id}
-                onClick={() => setTool(b.id)}
-                className={`p-2.5 sm:p-2 rounded-xl sm:rounded-lg transition-all ${tool === b.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                title={b.label}
-              >
-                <b.icon className="h-5 w-5" />
-              </button>
-            ))}
+          <div className="flex flex-col sm:flex-row items-center gap-2 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-md-outline/10 w-full sm:w-auto">
+            {brushes.map((b) => {
+              const isActive = tool === b.id;
+              return (
+                <Button
+                  key={b.id}
+                  variant={isActive ? "default" : "ghost"}
+                  size="icon"
+                  onClick={() => setTool(b.id)}
+                  className={`size-10 ${isActive ? "md-shadow-1" : "text-md-on-surface-variant hover:bg-md-primary/10"}`}
+                  title={b.label}
+                >
+                  <b.icon className="size-5" />
+                </Button>
+              );
+            })}
           </div>
 
           {/* Color Selection */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-white/10 w-full sm:w-auto">
-            <div className="grid grid-cols-5 sm:flex gap-2 sm:gap-1.5">
+          <div className="flex flex-col sm:flex-row items-center gap-4 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-md-outline/10 w-full sm:w-auto">
+            <div className="grid grid-cols-5 sm:flex gap-2">
               {colors.map((c) => (
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`h-6 w-6 rounded-full border-2 transition-all hover:scale-110 active:scale-90 ${color === c ? 'border-white ring-2 ring-indigo-500/50' : 'border-transparent'}`}
+                  className={`h-6 w-6 rounded-full border-2 md-transition hover:scale-125 active:scale-95 ${color === c ? 'border-md-primary ring-2 ring-md-primary/20 scale-110 shadow-sm' : 'border-transparent opacity-80 hover:opacity-100'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <input 
-                type="color" 
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-10 h-10 sm:w-8 sm:h-8 rounded-xl sm:rounded-lg bg-white/5 cursor-pointer p-1 border border-white/10 overflow-hidden"
-              />
-              <span className="sm:hidden text-[10px] font-bold text-slate-500 uppercase">Custom</span>
+              <label className="relative cursor-pointer group">
+                <input 
+                  type="color" 
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="w-8 h-8 rounded-full bg-md-surface-container-low cursor-pointer p-0.5 border border-md-outline/20 overflow-hidden"
+                />
+              </label>
             </div>
           </div>
 
           {/* Size Selection */}
-          <div className="flex items-center justify-between sm:justify-start gap-2 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-white/10 w-full sm:w-auto">
-            <span className="sm:hidden text-xs font-bold text-slate-400 uppercase">Size</span>
-            <select 
-              value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
-              className="bg-white/5 sm:bg-transparent px-3 py-1.5 sm:p-0 rounded-lg text-slate-300 text-sm font-bold focus:outline-none cursor-pointer hover:text-white transition-colors"
-            >
-              {sizes.map(s => (
-                <option key={s} value={s} className="bg-slate-900">{s}px</option>
-              ))}
-            </select>
+          <div className="flex items-center justify-between sm:justify-start gap-4 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-md-outline/10 w-full sm:w-auto">
+            <span className="sm:hidden text-xs font-bold text-md-on-surface-variant uppercase tracking-wider">Size</span>
+            <div className="flex items-center gap-1 bg-md-secondary-container/50 px-3 py-1 rounded-full border border-md-outline/5 hover:bg-md-secondary-container md-transition">
+              <select 
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+                className="bg-transparent text-md-on-secondary-container text-xs font-bold focus:outline-none cursor-pointer pr-1"
+              >
+                {sizes.map(s => (
+                  <option key={s} value={s} className="bg-md-surface-container-low">{s}px</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Actions */}
-          <div className="flex sm:flex-row items-center gap-1 pt-2 sm:pt-0">
-            <div className="flex items-center gap-1 sm:pr-2 sm:border-r border-white/10 sm:mr-1">
-              <button
+          <div className="flex items-center gap-2 pt-2 sm:pt-0">
+            <div className="flex items-center gap-1 sm:pr-2 sm:border-r border-md-outline/10 sm:mr-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={onUndo}
-                className="p-2.5 sm:p-2 rounded-xl sm:rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                className="text-md-on-surface-variant hover:text-md-primary"
                 title="Undo (Ctrl+Z)"
               >
-                <Undo2 className="h-5 w-5 sm:h-4 sm:w-4" />
-              </button>
-              <button
+                <Undo2 className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={onRedo}
-                className="p-2.5 sm:p-2 rounded-xl sm:rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                className="text-md-on-surface-variant hover:text-md-primary"
                 title="Redo (Ctrl+Y)"
               >
-                <Redo2 className="h-5 w-5 sm:h-4 sm:w-4" />
-              </button>
+                <Redo2 className="size-4" />
+              </Button>
             </div>
 
-            <div className="flex items-center gap-1">
-              <button
+            <div className="flex items-center gap-2">
+              <Button
+                variant={isChatOpen ? "tonal" : "ghost"}
+                size="icon"
                 onClick={onToggleChat}
-                className={`relative p-2.5 sm:p-2 rounded-xl sm:rounded-lg transition-all ${isChatOpen ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-indigo-400 hover:bg-white/5'}`}
+                className="relative"
                 title="Chat"
               >
-                <MessageSquare className="h-5 w-5" />
+                <MessageSquare className="size-5" />
                 {hasUnread && !isChatOpen && (
-                  <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-slate-900" />
+                  <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-md-tertiary border-2 border-md-surface-container animate-pulse" />
                 )}
-              </button>
-              <button
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onClear}
-                className="p-2.5 sm:p-2 rounded-xl sm:rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                className="text-md-on-surface-variant hover:bg-red-500/10 hover:text-red-500"
                 title="Clear Canvas"
               >
-                <Trash2 className="h-5 w-5" />
-              </button>
-              <button
+                <Trash2 className="size-5" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onSave}
-                className="p-2.5 sm:p-2 rounded-xl sm:rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-400/10 transition-all"
-                title="Save as Image"
+                className="text-md-on-surface-variant"
+                title="Save"
               >
-                <Download className="h-5 w-5" />
-              </button>
-              <button
+                <Download className="size-5" />
+              </Button>
+
+              <Button
+                variant="tonal"
+                size="icon"
                 onClick={onShare}
-                className="p-2.5 sm:p-2 rounded-xl sm:rounded-lg text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10 transition-all"
-                title="Share Room ID"
+                className="rounded-full shadow-sm"
+                title="Share Room"
               >
-                <Share2 className="h-5 w-5" />
-              </button>
+                <Share2 className="size-5" />
+              </Button>
             </div>
           </div>
 
           {/* User Indicator */}
-          <div className="hidden sm:flex items-center gap-2 pl-4 border-l border-white/10 ml-2">
-            <div className="flex items-center justify-center bg-indigo-500/20 px-2 py-1 rounded-full border border-indigo-500/30">
-              <Users className="h-3.5 w-3.5 text-indigo-400 mr-1.5" />
-              <span className="text-xs font-bold text-indigo-300">{userCount}</span>
+          <div className="hidden sm:flex items-center gap-3 pl-4 border-l border-md-outline/10 ml-1">
+            <div className="flex items-center gap-2 bg-md-primary/10 px-3 py-1.5 rounded-full border border-md-primary/10">
+              <Users className="size-4 text-md-primary" />
+              <span className="text-xs font-bold text-md-primary">{userCount}</span>
             </div>
           </div>
         </div>

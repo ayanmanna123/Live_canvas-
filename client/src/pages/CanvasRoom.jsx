@@ -23,6 +23,7 @@ const CanvasRoom = () => {
   const [color, setColor] = useState('#ffffff');
   const [size, setSize] = useState(5);
   const [tool, setTool] = useState('pencil');
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [notification, setNotification] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isUsersListOpen, setIsUsersListOpen] = useState(false);
@@ -205,6 +206,7 @@ const CanvasRoom = () => {
         color={color}
         size={size}
         tool={tool}
+        onPan={setPanOffset}
       />
 
       {/* Remote Cursors Presence Layer */}
@@ -215,8 +217,8 @@ const CanvasRoom = () => {
               key={id}
               className="absolute transition-all duration-75"
               style={{ 
-                left: cursor.position.x, 
-                top: cursor.position.y 
+                left: cursor.position.x + panOffset.x, 
+                top: cursor.position.y + panOffset.y 
               }}
             >
               <div className="relative">

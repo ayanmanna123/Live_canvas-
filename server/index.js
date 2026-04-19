@@ -11,15 +11,17 @@ dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
+const clientUrl = (process.env.CLIENT_URL || '').replace(/\/$/, '');
+
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || '*',
+    origin: clientUrl || '*',
     methods: ['GET', 'POST']
   }
 });
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || '*',
+  origin: clientUrl || '*',
   methods: ['GET', 'POST'],
   credentials: true
 }));

@@ -2,10 +2,13 @@ import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, f
 import { useSocket } from '../contexts/SocketContext';
 import { nanoid } from 'nanoid';
 
-const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) => {
+const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }, ref) => {
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [lastPanPos, setLastPanPos] = useState({ x: 0, y: 0 });
   const [strokes, setStrokes] = useState([]);
   
   // Undo/Redo State
@@ -15,11 +18,10 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) 
   const currentStroke = useRef(null);
   const { socket } = useSocket();
 
-  // Expose undo/redo to parent
+  // Expose methods to parent
   useImperativeHandle(ref, () => ({
     undo: () => {
       if (undoStack.length === 0) return;
-      
       const lastStrokeId = undoStack[undoStack.length - 1];
       const strokeToUndo = strokes.find(s => s.id === lastStrokeId);
       
@@ -32,30 +34,37 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) 
     },
     redo: () => {
       if (redoStack.length === 0) return;
-      
       const strokeToRedo = redoStack[redoStack.length - 1];
       setRedoStack(prev => prev.slice(0, -1));
       setUndoStack(prev => [...prev, strokeToRedo.id]);
       setStrokes(prev => [...prev, strokeToRedo]);
       socket.emit('draw', { roomId, stroke: strokeToRedo });
     },
+    getPanOffset: () => panOffset,
     canUndo: undoStack.length > 0,
     canRedo: redoStack.length > 0
   }));
 
   // Initialize Canvas
   useEffect(() => {
-    const canvas = canvasRef.current;
-    canvas.width = window.innerWidth * 2;
-    canvas.height = window.innerHeight * 2;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      canvas.width = window.innerWidth * 2;
+      canvas.height = window.innerHeight * 2;
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+      const context = canvas.getContext('2d');
+      context.scale(2, 2);
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+      contextRef.current = context;
+      redrawCanvas();
+    };
 
-    const context = canvas.getContext('2d');
-    context.scale(2, 2);
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
-    contextRef.current = context;
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const setBrushStyle = (ctx, stroke) => {
@@ -89,7 +98,10 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) 
     const ctx = contextRef.current;
     if (!canvas || !ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width / 2, canvas.height / 2);
+    
+    ctx.save();
+    ctx.translate(panOffset.x, panOffset.y);
     
     strokes.forEach(stroke => {
       if (stroke.points.length < 2) return;
@@ -108,7 +120,9 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) 
       ctx.stroke();
       ctx.restore();
     });
-  }, [strokes]);
+    
+    ctx.restore();
+  }, [strokes, panOffset]);
 
   useEffect(() => {
     redrawCanvas();
@@ -123,22 +137,20 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) 
     return Math.sqrt((px - (x1 + t * (x2 - x1))) ** 2 + (py - (y1 + t * (y2 - y1))) ** 2);
   };
 
-  const handleEraserCollision = (x, y) => {
+  const handleEraserCollision = (worldX, worldY) => {
     const eraseRadius = size * 2;
     let found = false;
     
     setStrokes(prevStrokes => {
       const remainingStrokes = prevStrokes.filter(stroke => {
-        // Check if any segment of this stroke is hit
         for (let i = 0; i < stroke.points.length - 1; i++) {
           const dist = getDistancePointToSegment(
-            x, y, 
+            worldX, worldY, 
             stroke.points[i].x, stroke.points[i].y, 
             stroke.points[i+1].x, stroke.points[i+1].y
           );
           if (dist < eraseRadius + (stroke.size / 2)) {
             socket.emit('delete-stroke', { roomId, strokeId: stroke.id });
-            // If it was our stroke, remove from undoStack
             setUndoStack(prev => prev.filter(id => id !== stroke.id));
             found = true;
             return false;
@@ -188,59 +200,92 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) 
     };
   }, [socket, roomId]);
 
-  const startDrawing = (e) => {
+  const startInteraction = (e) => {
     const { offsetX, offsetY } = e.nativeEvent;
     
+    // Panning interaction (Middle click, Right click, or Shift key)
+    if (e.button === 1 || e.button === 2 || tool === 'pan' || (e.shiftKey)) {
+      setIsPanning(true);
+      setLastPanPos({ x: offsetX, y: offsetY });
+      return;
+    }
+
+    const worldX = offsetX - panOffset.x;
+    const worldY = offsetY - panOffset.y;
+
     if (tool === 'eraser') {
       setIsDrawing(true);
-      handleEraserCollision(offsetX, offsetY);
+      handleEraserCollision(worldX, worldY);
       return;
     }
 
     setIsDrawing(true);
     currentStroke.current = {
       id: nanoid(),
-      points: [{ x: offsetX, y: offsetY }],
+      points: [{ x: worldX, y: worldY }],
       color,
       size,
       tool
     };
   };
 
-  const draw = (e) => {
+  const performInteraction = (e) => {
     const { offsetX, offsetY } = e.nativeEvent;
 
+    // Broadcast cursor position in world space
     socket.emit('cursor-move', {
       roomId,
       userName,
-      position: { x: offsetX, y: offsetY }
+      position: { x: offsetX - panOffset.x, y: offsetY - panOffset.y }
     });
 
-    if (!isDrawing) return;
-
-    if (tool === 'eraser') {
-      handleEraserCollision(offsetX, offsetY);
+    if (isPanning) {
+      const dx = offsetX - lastPanPos.x;
+      const dy = offsetY - lastPanPos.y;
+      const newOffset = { x: panOffset.x + dx, y: panOffset.y + dy };
+      setPanOffset(newOffset);
+      onPan?.(newOffset);
+      setLastPanPos({ x: offsetX, y: offsetY });
       return;
     }
 
-    const newPoint = { x: offsetX, y: offsetY };
+    if (!isDrawing) return;
+
+    const worldX = offsetX - panOffset.x;
+    const worldY = offsetY - panOffset.y;
+
+    if (tool === 'eraser') {
+      handleEraserCollision(worldX, worldY);
+      return;
+    }
+
+    const newPoint = { x: worldX, y: worldY };
     currentStroke.current.points.push(newPoint);
     
+    // Immediate localized feedback
     const ctx = contextRef.current;
-    ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    setBrushStyle(ctx, currentStroke.current);
-    
-    const pts = currentStroke.current.points;
-    ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
-    ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-    ctx.stroke();
-    ctx.restore();
+    if (ctx) {
+      ctx.save();
+      ctx.translate(panOffset.x, panOffset.y);
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = size;
+      setBrushStyle(ctx, currentStroke.current);
+      
+      const pts = currentStroke.current.points;
+      ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+      ctx.stroke();
+      ctx.restore();
+    }
   };
 
-  const stopDrawing = () => {
+  const stopInteraction = () => {
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
+
     if (!isDrawing) return;
     setIsDrawing(false);
 
@@ -250,7 +295,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) 
       const finalStroke = { ...currentStroke.current };
       setStrokes(prev => [...prev, finalStroke]);
       setUndoStack(prev => [...prev, finalStroke.id]);
-      setRedoStack([]); // Clear redo stack on new action
+      setRedoStack([]); 
       socket.emit('draw', { roomId, stroke: finalStroke });
     }
     currentStroke.current = null;
@@ -259,11 +304,12 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool }, ref) 
   return (
     <canvas
       ref={canvasRef}
-      onPointerDown={startDrawing}
-      onPointerMove={draw}
-      onPointerUp={stopDrawing}
-      onPointerLeave={stopDrawing}
-      className="block cursor-crosshair bg-slate-900 touch-none"
+      onPointerDown={startInteraction}
+      onPointerMove={performInteraction}
+      onPointerUp={stopInteraction}
+      onPointerLeave={stopInteraction}
+      onContextMenu={(e) => e.preventDefault()}
+      className={`block bg-md-background touch-none ${isPanning ? 'cursor-grabbing' : tool === 'pan' ? 'cursor-grab' : 'cursor-crosshair'}`}
     />
   );
 });
