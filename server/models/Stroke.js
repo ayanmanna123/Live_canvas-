@@ -1,0 +1,41 @@
+import mongoose from 'mongoose';
+
+const strokeSchema = new mongoose.Schema({
+  roomId: {
+    type: String,
+    required: true,
+    index: true
+  },
+  userId: {
+    type: String,
+    required: true
+  },
+  points: [
+    {
+      x: Number,
+      y: Number
+    }
+  ],
+  color: {
+    type: String,
+    default: '#000000'
+  },
+  size: {
+    type: Number,
+    default: 5
+  },
+  tool: {
+    type: String,
+    enum: ['pencil', 'eraser'],
+    default: 'pencil'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    expires: 86400 * 7 // Optional: Auto-delete strokes after 7 days
+  }
+});
+
+const Stroke = mongoose.model('Stroke', strokeSchema);
+
+export default Stroke;
