@@ -10,6 +10,14 @@ const strokeSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  type: {
+    type: String,
+    default: 'freehand'
+  },
+  content: {
+    type: String,
+    default: ''
+  },
   points: [
     {
       x: Number,
@@ -18,7 +26,7 @@ const strokeSchema = new mongoose.Schema({
   ],
   color: {
     type: String,
-    default: '#000000'
+    default: '#ffffff'
   },
   size: {
     type: Number,
@@ -26,7 +34,6 @@ const strokeSchema = new mongoose.Schema({
   },
   tool: {
     type: String,
-    enum: ['pencil', 'eraser'],
     default: 'pencil'
   },
   createdAt: {

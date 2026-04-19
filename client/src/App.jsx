@@ -9,7 +9,7 @@ function App() {
   return (
     <SocketProvider>
       <Router>
-        <div className="min-h-screen bg-slate-950 text-slate-50 font-sans selection:bg-indigo-500/30">
+        <div className="min-h-screen bg-md-background text-md-on-background selection:bg-md-primary/30">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/room/:roomId" element={<CanvasRoom />} />

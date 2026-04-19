@@ -4,6 +4,8 @@ import { nanoid } from 'nanoid';
 
 const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }, ref) => {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const textareaRef = useRef(null);
   const contextRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
@@ -11,12 +13,22 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
   const [lastPanPos, setLastPanPos] = useState({ x: 0, y: 0 });
   const [strokes, setStrokes] = useState([]);
   
+  // Text Input State
+  const [textInput, setTextInput] = useState(null); // { x, y, value, worldX, worldY }
+  
   // Undo/Redo State
-  const [undoStack, setUndoStack] = useState([]); // Array of IDs created by THIS user
-  const [redoStack, setRedoStack] = useState([]); // Array of full stroke objects
+  const [undoStack, setUndoStack] = useState([]); 
+  const [redoStack, setRedoStack] = useState([]); 
   
   const currentStroke = useRef(null);
   const { socket } = useSocket();
+
+  // Focus textarea when it appears
+  useEffect(() => {
+    if (textInput && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [textInput]);
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
@@ -48,12 +60,16 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
   // Initialize Canvas
   useEffect(() => {
     const handleResize = () => {
+      const container = containerRef.current;
       const canvas = canvasRef.current;
-      if (!canvas) return;
-      canvas.width = window.innerWidth * 2;
-      canvas.height = window.innerHeight * 2;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
+      if (!canvas || !container) return;
+      
+      const { width, height } = container.getBoundingClientRect();
+      canvas.width = width * 2;
+      canvas.height = height * 2;
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      
       const context = canvas.getContext('2d');
       context.scale(2, 2);
       context.lineCap = 'round';
@@ -63,8 +79,10 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+    
+    return () => resizeObserver.disconnect();
   }, []);
 
   const setBrushStyle = (ctx, stroke) => {
@@ -74,6 +92,13 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     ctx.shadowColor = 'transparent';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+
+    if (stroke.type === 'text') {
+      ctx.font = `bold ${stroke.size * 2}px Roboto, sans-serif`;
+      ctx.fillStyle = stroke.color;
+      ctx.textBaseline = 'middle';
+      return;
+    }
 
     switch (stroke.tool) {
       case 'highlighter':
@@ -98,12 +123,21 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     const ctx = contextRef.current;
     if (!canvas || !ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width / 2, canvas.height / 2);
+    const { width, height } = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, width, height);
     
     ctx.save();
     ctx.translate(panOffset.x, panOffset.y);
     
     strokes.forEach(stroke => {
+      if (stroke.type === 'text') {
+        ctx.save();
+        setBrushStyle(ctx, stroke);
+        ctx.fillText(stroke.content, stroke.points[0].x, stroke.points[0].y);
+        ctx.restore();
+        return;
+      }
+
       if (stroke.points.length < 2) return;
       
       ctx.save();
@@ -143,6 +177,18 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     
     setStrokes(prevStrokes => {
       const remainingStrokes = prevStrokes.filter(stroke => {
+        // Special case for text
+        if (stroke.type === 'text') {
+          const dist = Math.sqrt((worldX - stroke.points[0].x) ** 2 + (worldY - stroke.points[0].y) ** 2);
+          if (dist < eraseRadius + 10) {
+            socket.emit('delete-stroke', { roomId, strokeId: stroke.id });
+            setUndoStack(prev => prev.filter(id => id !== stroke.id));
+            found = true;
+            return false;
+          }
+          return true;
+        }
+
         for (let i = 0; i < stroke.points.length - 1; i++) {
           const dist = getDistancePointToSegment(
             worldX, worldY, 
@@ -176,7 +222,9 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
         points: s.points,
         color: s.color,
         size: s.size,
-        tool: s.tool
+        tool: s.tool,
+        type: s.type,
+        content: s.content
       }));
       setStrokes(formattedHistory);
     });
@@ -201,7 +249,9 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
   }, [socket, roomId]);
 
   const startInteraction = (e) => {
-    const { offsetX, offsetY } = e.nativeEvent;
+    const rect = containerRef.current.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
     
     // Panning interaction (Middle click, Right click, or Shift key)
     if (e.button === 1 || e.button === 2 || tool === 'pan' || (e.shiftKey)) {
@@ -209,6 +259,8 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
       setLastPanPos({ x: offsetX, y: offsetY });
       return;
     }
+
+    if (tool === 'text') return; // Handled in stopInteraction or Click
 
     const worldX = offsetX - panOffset.x;
     const worldY = offsetY - panOffset.y;
@@ -222,6 +274,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     setIsDrawing(true);
     currentStroke.current = {
       id: nanoid(),
+      type: 'freehand',
       points: [{ x: worldX, y: worldY }],
       color,
       size,
@@ -230,7 +283,10 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
   };
 
   const performInteraction = (e) => {
-    const { offsetX, offsetY } = e.nativeEvent;
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
 
     // Broadcast cursor position in world space
     socket.emit('cursor-move', {
@@ -250,6 +306,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     }
 
     if (!isDrawing) return;
+    if (tool === 'text') return; 
 
     const worldX = offsetX - panOffset.x;
     const worldY = offsetY - panOffset.y;
@@ -280,6 +337,24 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     }
   };
 
+  const handleCanvasClick = (e) => {
+    if (tool !== 'text') return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    const worldX = offsetX - panOffset.x;
+    const worldY = offsetY - panOffset.y;
+
+    setTextInput({
+      x: offsetX,
+      y: offsetY,
+      worldX,
+      worldY,
+      value: ''
+    });
+  };
+
   const stopInteraction = () => {
     if (isPanning) {
       setIsPanning(false);
@@ -289,7 +364,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     if (!isDrawing) return;
     setIsDrawing(false);
 
-    if (tool === 'eraser') return;
+    if (tool === 'eraser' || tool === 'text') return;
 
     if (currentStroke.current && currentStroke.current.points.length >= 2) {
       const finalStroke = { ...currentStroke.current };
@@ -301,16 +376,88 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     currentStroke.current = null;
   };
 
+  const handleTextCommit = (e) => {
+    // Only commit if they pressed Enter or we explicitly want to on blur
+    if ((e.key === 'Enter' && !e.shiftKey) || e.type === 'blur') {
+      const val = textInput?.value?.trim();
+      if (val) {
+        const textStroke = {
+          id: nanoid(),
+          type: 'text',
+          content: val,
+          points: [{ x: textInput.worldX, y: textInput.worldY }],
+          color,
+          size: size * 2.5,
+          tool: 'text'
+        };
+        setStrokes(prev => [...prev, textStroke]);
+        setUndoStack(prev => [...prev, textStroke.id]);
+        socket.emit('draw', { roomId, stroke: textStroke });
+        setTextInput(null);
+      } else if (e.type === 'blur') {
+        // Only close empty input on blur if it wasn't just opened
+        // But for simplicity, let's just close it if it's empty on blur
+        setTextInput(null);
+      }
+    } else if (e.key === 'Escape') {
+      setTextInput(null);
+    }
+  };
+
   return (
-    <canvas
-      ref={canvasRef}
-      onPointerDown={startInteraction}
-      onPointerMove={performInteraction}
-      onPointerUp={stopInteraction}
-      onPointerLeave={stopInteraction}
-      onContextMenu={(e) => e.preventDefault()}
-      className={`block bg-md-background touch-none ${isPanning ? 'cursor-grabbing' : tool === 'pan' ? 'cursor-grab' : 'cursor-crosshair'}`}
-    />
+    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-md-background">
+      <canvas
+        ref={canvasRef}
+        onPointerDown={startInteraction}
+        onPointerMove={performInteraction}
+        onPointerUp={stopInteraction}
+        onPointerLeave={stopInteraction}
+        onClick={handleCanvasClick}
+        onContextMenu={(e) => e.preventDefault()}
+        className={`block touch-none ${isPanning ? 'cursor-grabbing' : tool === 'pan' ? 'cursor-grab' : tool === 'text' ? 'cursor-text' : 'cursor-crosshair'}`}
+      />
+      
+      {textInput && (
+        <div 
+          className="absolute z-[100]"
+          style={{ 
+            left: textInput.x, 
+            top: textInput.y,
+            transform: 'translate(-4px, -50%)'
+          }}
+        >
+          <div className="bg-white border-4 border-md-primary rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.6)] p-1 flex flex-col gap-1 min-w-[200px]">
+            <textarea
+              ref={textareaRef}
+              autoFocus
+              placeholder="Type your text..."
+              value={textInput.value}
+              onChange={(e) => setTextInput({ ...textInput, value: e.target.value })}
+              onKeyDown={handleTextCommit}
+              onBlur={handleTextCommit}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="p-2 text-black focus:outline-none resize-none overflow-hidden h-auto block leading-tight font-sans bg-transparent"
+              style={{ 
+                fontSize: `${size * 2.5}px`,
+                minHeight: `${size * 4}px`
+              }}
+              rows={1}
+            />
+            <div className="flex justify-end p-1 border-t border-gray-100">
+               <button 
+                onMouseDown={(e) => {
+                  e.preventDefault(); // Prevent blur before commit
+                  handleTextCommit({ key: 'Enter', type: 'click' });
+                }}
+                className="px-3 py-1 bg-md-primary text-white text-xs rounded-full hover:brightness-110 active:scale-95 transition-all font-bold"
+               >
+                 DONE
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 });
 

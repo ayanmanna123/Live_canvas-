@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -28,7 +28,8 @@ const Toolbar = ({
     { id: 'pencil', icon: Pencil, label: 'Pencil' },
     { id: 'highlighter', icon: Highlighter, label: 'Highlighter' },
     { id: 'neon', icon: Sparkles, label: 'Neon' },
-    { id: 'dotted', icon: Type, label: 'Dotted' },
+    { id: 'dotted', icon: CircleDot, label: 'Dotted' },
+    { id: 'text', icon: Type, label: 'Text' },
     { id: 'eraser', icon: Eraser, label: 'Eraser' },
     { id: 'pan', icon: Hand, label: 'Pan' },
   ];
