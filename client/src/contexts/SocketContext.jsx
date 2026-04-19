@@ -10,7 +10,7 @@ export const SocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const socketInstance = io('http://localhost:5000', {
+    const socketInstance = io(import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000', {
       transports: ['polling', 'websocket'], // Allow polling fallback
       autoConnect: true,
       reconnectionAttempts: 5
