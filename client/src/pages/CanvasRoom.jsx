@@ -21,6 +21,7 @@ const CanvasRoom = () => {
   const [users, setUsers] = useState([]);
   const [remoteCursors, setRemoteCursors] = useState({});
   const [color, setColor] = useState('#ffffff');
+  const [bgColor, setBgColor] = useState('#0f172a'); // Default slate-900
   const [size, setSize] = useState(5);
   const [tool, setTool] = useState('pencil');
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -75,6 +76,10 @@ const CanvasRoom = () => {
       }));
     });
 
+    socket.on('background-changed', (newColor) => {
+      setBgColor(newColor);
+    });
+
     socket.on('notification', ({ message }) => {
       setNotification(message);
       setTimeout(() => setNotification(null), 3000);
@@ -83,6 +88,7 @@ const CanvasRoom = () => {
     return () => {
       socket.off('user-list-update');
       socket.off('cursor-move-remote');
+      socket.off('background-changed');
       socket.off('notification');
     };
   }, [socket, roomId, userName]);
@@ -91,6 +97,11 @@ const CanvasRoom = () => {
     if (window.confirm('Are you sure you want to clear the entire canvas?')) {
       socket.emit('clear-canvas', roomId);
     }
+  };
+
+  const handleBgChange = (newColor) => {
+    setBgColor(newColor);
+    socket.emit('change-background', { roomId, color: newColor });
   };
 
   const handleSaveImage = () => {
@@ -109,7 +120,7 @@ const CanvasRoom = () => {
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-slate-900">
+    <div className="relative h-screen w-screen overflow-hidden" style={{ backgroundColor: bgColor }}>
       {/* Connectivity Status */}
       {!isConnected && (
         <div className="absolute top-4 left-4 z-[100] flex items-center gap-2 rounded-full bg-red-500/20 px-3 py-1 border border-red-500/50 backdrop-blur-md">
@@ -128,6 +139,7 @@ const CanvasRoom = () => {
       {/* Toolbar */}
       <Toolbar 
         color={color} setColor={setColor}
+        bgColor={bgColor} setBgColor={handleBgChange}
         size={size} setSize={setSize}
         tool={tool} setTool={setTool}
         onClear={handleClearCanvas}
@@ -204,6 +216,7 @@ const CanvasRoom = () => {
         roomId={roomId} 
         userName={userName}
         color={color}
+        bgColor={bgColor}
         size={size}
         tool={tool}
         onPan={setPanOffset}

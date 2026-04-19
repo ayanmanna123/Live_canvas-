@@ -172,6 +172,11 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('change-background', ({ roomId, color }) => {
+    if (!roomId) return;
+    socket.to(roomId).emit('background-changed', color);
+  });
+
   socket.on('disconnecting', () => {
     // rooms is Map<roomId, Map<socketId, userName>>
     socket.rooms.forEach(roomId => {

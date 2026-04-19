@@ -405,7 +405,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-md-background">
+    <div ref={containerRef} className="relative w-full h-full overflow-hidden">
       <canvas
         ref={canvasRef}
         onPointerDown={startInteraction}

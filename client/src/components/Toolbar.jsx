@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
   color, setColor, 
+  bgColor, setBgColor,
   size, setSize, 
   tool, setTool, 
   onClear, onSave,
@@ -78,18 +79,25 @@ const Toolbar = ({
                   onClick={() => setColor(c)}
                   className={`h-6 w-6 rounded-full border-2 md-transition hover:scale-125 active:scale-95 ${color === c ? 'border-md-primary ring-2 ring-md-primary/20 scale-110 shadow-sm' : 'border-transparent opacity-80 hover:opacity-100'}`}
                   style={{ backgroundColor: c }}
+                  title="Brush Color"
                 />
               ))}
             </div>
-            <div className="flex items-center gap-2">
-              <label className="relative cursor-pointer group">
-                <input 
-                  type="color" 
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="w-8 h-8 rounded-full bg-md-surface-container-low cursor-pointer p-0.5 border border-md-outline/20 overflow-hidden"
-                />
-              </label>
+            
+            <div className="flex items-center gap-3 pl-4 border-l border-md-outline/10 ml-1">
+              <div className="flex flex-col items-center gap-0.5" title="Background Color">
+                <div className="relative group">
+                  <input 
+                    type="color" 
+                    value={bgColor}
+                    onChange={(e) => setBgColor(e.target.value)}
+                    className="w-10 h-10 rounded-xl bg-md-surface-container-low cursor-pointer p-0.5 border-2 border-md-outline/20 overflow-hidden md-transition hover:border-md-primary"
+                  />
+                  <div className="absolute -top-2 -right-2 bg-md-primary text-white p-1 rounded-md shadow-sm pointer-events-none">
+                    <PaintBucket className="size-3" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
