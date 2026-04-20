@@ -341,7 +341,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
 
     socket.on('canvas-history', (history) => {
       const formattedHistory = history.map(s => ({
-        id: s._id || s.id,
+        id: s.id || s._id,
         userId: s.userId,
         points: s.points,
         color: s.color,
