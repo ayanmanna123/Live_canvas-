@@ -246,6 +246,13 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('background-changed', color);
   });
 
+  socket.on('movie-update', (data) => {
+    // data: { roomId, url, playing, currentTime, action: 'play'|'pause'|'seek'|'url' }
+    const { roomId } = data;
+    if (!roomId) return;
+    socket.to(roomId).emit('movie-update-remote', data);
+  });
+
   socket.on('get-user-history', async (roomId) => {
     if (!roomId) return;
     if (mongoose.connection.readyState === 1) {

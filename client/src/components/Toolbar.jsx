@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2 } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -22,7 +22,9 @@ const Toolbar = ({
   inCall,
   onToggleCall,
   autoMode,
-  setAutoMode
+  setAutoMode,
+  onToggleWatchParty,
+  isWatchPartyOpen
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   
@@ -161,6 +163,10 @@ const Toolbar = ({
 
             <Button variant={autoMode ? "tonal" : "ghost"} size="icon" onClick={() => setAutoMode(!autoMode)} title={autoMode ? "Auto Mode: ON" : "Auto Mode: OFF"} className={`rounded-full ${autoMode ? "text-md-primary" : "text-md-on-surface-variant"}`}>
               <Wand2 className={`size-5 ${autoMode ? 'animate-pulse' : ''}`} />
+            </Button>
+
+            <Button variant={isWatchPartyOpen ? "tonal" : "ghost"} size="icon" onClick={onToggleWatchParty} title="Watch Party" className={`rounded-full ${isWatchPartyOpen ? "text-md-primary" : "text-md-on-surface-variant"}`}>
+              <Film className="size-5" />
             </Button>
 
             <Button variant={isChatOpen ? "tonal" : "ghost"} size="icon" onClick={onToggleChat} className="relative rounded-full" title="Chat">

@@ -9,6 +9,7 @@ import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video } from 'lucide
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Peer from 'simple-peer';
 import VideoCall from '../components/VideoCall';
+import WatchParty from '../components/WatchParty';
 
 const CanvasRoom = () => {
   const { roomId } = useParams();
@@ -38,6 +39,7 @@ const CanvasRoom = () => {
   const [userHistory, setUserHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [autoMode, setAutoMode] = useState(false);
+  const [isWatchPartyOpen, setIsWatchPartyOpen] = useState(false);
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
 
@@ -314,6 +316,8 @@ const CanvasRoom = () => {
         onToggleCall={inCall ? handleEndCall : handleJoinCall}
         autoMode={autoMode}
         setAutoMode={setAutoMode}
+        onToggleWatchParty={() => setIsWatchPartyOpen(!isWatchPartyOpen)}
+        isWatchPartyOpen={isWatchPartyOpen}
       />
       
       {inCall && localStream && (
@@ -386,6 +390,13 @@ const CanvasRoom = () => {
         history={userHistory}
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
+      />
+
+      <WatchParty 
+        isOpen={isWatchPartyOpen}
+        onClose={() => setIsWatchPartyOpen(false)}
+        roomId={roomId}
+        socket={socket}
       />
 
       {/* Drawing Canvas */}
