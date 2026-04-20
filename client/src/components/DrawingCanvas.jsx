@@ -135,6 +135,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
       const textStrokesByUser = strokes
         .filter(s => s.type === 'text')
         .reduce((acc, s) => {
+          // Use userId, or socket.id as fallback, or 'anonymous'
           const uid = s.userId || 'anonymous';
           if (!acc[uid]) acc[uid] = [];
           acc[uid].push(s);
@@ -146,26 +147,29 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
         
         ctx.save();
         ctx.beginPath();
-        ctx.strokeStyle = getUserColor(uid);
-        ctx.lineWidth = 3;
+        const uColor = getUserColor(uid);
+        ctx.strokeStyle = uColor;
+        ctx.lineWidth = 4; // Slightly thicker
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.setLineDash([5, 5]); // Rope-like dashed style
-        ctx.globalAlpha = 0.6;
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = getUserColor(uid);
+        ctx.setLineDash([8, 6]); // More distinct dashed style
+        ctx.globalAlpha = 0.7;
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = uColor;
 
         for (let i = 0; i < userStrokes.length - 1; i++) {
           const p1 = userStrokes[i].points[0];
           const p2 = userStrokes[i+1].points[0];
           
+          if (!p1 || !p2) continue;
+
           ctx.moveTo(p1.x, p1.y);
           
           // Calculate control point for the "carve" (curve)
           const mx = (p1.x + p2.x) / 2;
           const my = (p1.y + p2.y) / 2;
           const dist = Math.sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2);
-          const hang = Math.min(dist * 0.2, 50); // Dynamic hang based on distance
+          const hang = Math.min(dist * 0.25, 100); // Dynamic hang
           
           ctx.quadraticCurveTo(mx, my + hang, p2.x, p2.y);
         }
