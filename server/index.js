@@ -272,7 +272,14 @@ io.on('connection', (socket) => {
   socket.on('movie-time-report', (data) => {
     const { roomId, currentTime } = data;
     if (roomId && rooms.has(roomId)) {
-      rooms.get(roomId).movie.currentTime = currentTime;
+      const room = rooms.get(roomId);
+      room.movie.currentTime = currentTime;
+      // Broadcast current master time to other participants
+      socket.to(roomId).emit('movie-update-remote', { 
+        roomId, 
+        currentTime, 
+        masterId: room.movie.masterId 
+      });
     }
   });
 

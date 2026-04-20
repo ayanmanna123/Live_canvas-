@@ -64,7 +64,14 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
           setPlaybackRate(1.0); // Reset rate on hard sync
         } else if (diff > 0.5 && socket.id !== masterId) {
           // Adaptive playback rate for small drifts
-          setPlaybackRate(timeToSeek > localTime ? 1.1 : 0.9);
+          const isAhead = timeToSeek > localTime;
+          let rate = 1.0;
+          
+          if (diff <= 1.5) rate = isAhead ? 1.1 : 0.9;
+          else if (diff <= 3) rate = isAhead ? 1.25 : 0.75;
+          else rate = isAhead ? 1.5 : 0.5;
+          
+          setPlaybackRate(rate);
         } else {
           setPlaybackRate(1.0);
         }
@@ -182,7 +189,9 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
             {playbackRate !== 1.0 && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full animate-pulse">
                 <RefreshCw className="h-3 w-3 text-indigo-400 rotate" />
-                <span className="text-[10px] font-bold text-indigo-400 uppercase">Syncing...</span>
+                <span className="text-[10px] font-bold text-indigo-400 uppercase">
+                  Syncing ({playbackRate}x)...
+                </span>
               </div>
             )}
           </div>
