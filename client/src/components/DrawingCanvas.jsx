@@ -1,7 +1,81 @@
-import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef, useReducer } from 'react';
 import { useSocket } from '../contexts/SocketContext';
 import { nanoid } from 'nanoid';
 import { getUserColor } from '../lib/userColor';
+
+const initialState = {
+  strokes: [],
+  undoStack: [],
+  redoStack: []
+};
+
+const canvasReducer = (state, action) => {
+  switch (action.type) {
+    case 'SET_HISTORY':
+      return {
+        ...state,
+        strokes: action.history,
+        undoStack: [],
+        redoStack: []
+      };
+
+    case 'ADD_STROKE':
+      // Local stroke: add to strokes and undo stack, clear redo
+      return {
+        ...state,
+        strokes: [...state.strokes, action.stroke],
+        undoStack: [...state.undoStack, action.stroke.id],
+        redoStack: []
+      };
+
+    case 'REMOTE_STROKE':
+      return {
+        ...state,
+        strokes: [...state.strokes, action.stroke]
+      };
+
+    case 'UNDO': {
+      if (state.undoStack.length === 0) return state;
+      const lastId = state.undoStack[state.undoStack.length - 1];
+      const strokeToUndo = state.strokes.find(s => s.id === lastId);
+      
+      if (!strokeToUndo) return state;
+
+      return {
+        ...state,
+        strokes: state.strokes.filter(s => s.id !== lastId),
+        undoStack: state.undoStack.slice(0, -1),
+        redoStack: [...state.redoStack, strokeToUndo]
+      };
+    }
+
+    case 'REDO': {
+      if (state.redoStack.length === 0) return state;
+      const strokeToRedo = state.redoStack[state.redoStack.length - 1];
+      
+      return {
+        ...state,
+        strokes: [...state.strokes, strokeToRedo],
+        undoStack: [...state.undoStack, strokeToRedo.id],
+        redoStack: state.redoStack.slice(0, -1)
+      };
+    }
+
+    case 'DELETE_STROKE':
+      return {
+        ...state,
+        strokes: state.strokes.filter(s => s.id !== action.strokeId),
+        undoStack: state.undoStack.filter(id => id !== action.strokeId),
+        redoStack: state.redoStack.filter(s => s.id !== action.strokeId)
+      };
+
+    case 'CLEAR_CANVAS':
+      return initialState;
+
+    default:
+      return state;
+  }
+};
 
 const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, showRopes }, ref) => {
   const canvasRef = useRef(null);
@@ -12,14 +86,13 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
   const [isPanning, setIsPanning] = useState(false);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [lastPanPos, setLastPanPos] = useState({ x: 0, y: 0 });
-  const [strokes, setStrokes] = useState([]);
+  
+  // Consolidated Canvas State (Strokes + History)
+  const [state, dispatch] = useReducer(canvasReducer, initialState);
+  const { strokes, undoStack, redoStack } = state;
   
   // Text Input State
   const [textInput, setTextInput] = useState(null); // { x, y, value, worldX, worldY }
-  
-  // Undo/Redo State
-  const [undoStack, setUndoStack] = useState([]); 
-  const [redoStack, setRedoStack] = useState([]); 
   
   const currentStroke = useRef(null);
   const { socket } = useSocket();
@@ -34,24 +107,25 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
     undo: () => {
+      // Find the stroke to undo before dispatching to handle signaling
       if (undoStack.length === 0) return;
-      const lastStrokeId = undoStack[undoStack.length - 1];
-      const strokeToUndo = strokes.find(s => s.id === lastStrokeId);
+      const lastId = undoStack[undoStack.length - 1];
       
-      if (strokeToUndo) {
-        setRedoStack(prev => [...prev, strokeToUndo]);
-        setUndoStack(prev => prev.slice(0, -1));
-        setStrokes(prev => prev.filter(s => s.id !== lastStrokeId));
-        socket.emit('delete-stroke', { roomId, strokeId: lastStrokeId });
+      dispatch({ type: 'UNDO' });
+      
+      if (socket) {
+        socket.emit('delete-stroke', { roomId, strokeId: lastId });
       }
     },
     redo: () => {
       if (redoStack.length === 0) return;
       const strokeToRedo = redoStack[redoStack.length - 1];
-      setRedoStack(prev => prev.slice(0, -1));
-      setUndoStack(prev => [...prev, strokeToRedo.id]);
-      setStrokes(prev => [...prev, strokeToRedo]);
-      socket.emit('draw', { roomId, stroke: strokeToRedo });
+      
+      dispatch({ type: 'REDO' });
+      
+      if (socket) {
+        socket.emit('draw', { roomId, stroke: strokeToRedo });
+      }
     },
     getPanOffset: () => panOffset,
     canUndo: undoStack.length > 0,
@@ -222,22 +296,14 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
 
   const handleEraserCollision = (worldX, worldY) => {
     const eraseRadius = size * 2;
-    let found = false;
     
-    setStrokes(prevStrokes => {
-      const remainingStrokes = prevStrokes.filter(stroke => {
-        // Special case for text
-        if (stroke.type === 'text') {
-          const dist = Math.sqrt((worldX - stroke.points[0].x) ** 2 + (worldY - stroke.points[0].y) ** 2);
-          if (dist < eraseRadius + 10) {
-            socket.emit('delete-stroke', { roomId, strokeId: stroke.id });
-            setUndoStack(prev => prev.filter(id => id !== stroke.id));
-            found = true;
-            return false;
-          }
-          return true;
-        }
-
+    // Use the current strokes from state for collision detection
+    strokes.forEach(stroke => {
+      let collided = false;
+      if (stroke.type === 'text') {
+        const dist = Math.sqrt((worldX - stroke.points[0].x) ** 2 + (worldY - stroke.points[0].y) ** 2);
+        if (dist < eraseRadius + 10) collided = true;
+      } else {
         for (let i = 0; i < stroke.points.length - 1; i++) {
           const dist = getDistancePointToSegment(
             worldX, worldY, 
@@ -245,15 +311,16 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
             stroke.points[i+1].x, stroke.points[i+1].y
           );
           if (dist < eraseRadius + (stroke.size / 2)) {
-            socket.emit('delete-stroke', { roomId, strokeId: stroke.id });
-            setUndoStack(prev => prev.filter(id => id !== stroke.id));
-            found = true;
-            return false;
+            collided = true;
+            break;
           }
         }
-        return true;
-      });
-      return found ? remainingStrokes : prevStrokes;
+      }
+
+      if (collided) {
+        dispatch({ type: 'DELETE_STROKE', strokeId: stroke.id });
+        socket.emit('delete-stroke', { roomId, strokeId: stroke.id });
+      }
     });
   };
 
@@ -262,14 +329,13 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
     if (!socket) return;
 
     socket.on('draw-remote', (stroke) => {
-      // Server now sends { ...stroke, userId }
-      setStrokes(prev => [...prev, stroke]);
+      dispatch({ type: 'REMOTE_STROKE', stroke });
     });
 
     socket.on('canvas-history', (history) => {
       const formattedHistory = history.map(s => ({
         id: s._id || s.id,
-        userId: s.userId, // Capture userId from DB
+        userId: s.userId,
         points: s.points,
         color: s.color,
         size: s.size,
@@ -277,18 +343,15 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
         type: s.type,
         content: s.content
       }));
-      setStrokes(formattedHistory);
+      dispatch({ type: 'SET_HISTORY', history: formattedHistory });
     });
 
     socket.on('delete-stroke-remote', (strokeId) => {
-      setStrokes(prev => prev.filter(s => s.id !== strokeId));
-      setUndoStack(prev => prev.filter(id => id !== strokeId));
+      dispatch({ type: 'DELETE_STROKE', strokeId });
     });
 
     socket.on('clear-canvas-remote', () => {
-      setStrokes([]);
-      setUndoStack([]);
-      setRedoStack([]);
+      dispatch({ type: 'CLEAR_CANVAS' });
     });
 
     return () => {
@@ -422,9 +485,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
 
     if (currentStroke.current && currentStroke.current.points.length >= 2) {
       const finalStroke = { ...currentStroke.current };
-      setStrokes(prev => [...prev, finalStroke]);
-      setUndoStack(prev => [...prev, finalStroke.id]);
-      setRedoStack([]); 
+      dispatch({ type: 'ADD_STROKE', stroke: finalStroke });
       socket.emit('draw', { roomId, stroke: finalStroke });
     }
     currentStroke.current = null;
@@ -437,7 +498,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
       if (val) {
         const textStroke = {
           id: nanoid(),
-          userId: socket.id, // Track local user
+          userId: socket.id,
           type: 'text',
           content: val,
           points: [{ x: textInput.worldX, y: textInput.worldY }],
@@ -445,8 +506,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
           size: size * 2.5,
           tool: 'text'
         };
-        setStrokes(prev => [...prev, textStroke]);
-        setUndoStack(prev => [...prev, textStroke.id]);
+        dispatch({ type: 'ADD_STROKE', stroke: textStroke });
         socket.emit('draw', { roomId, stroke: textStroke });
         setTextInput(null);
       } else if (e.type === 'blur') {

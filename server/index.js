@@ -90,9 +90,12 @@ io.on('connection', (socket) => {
     }
 
     // Notify others
-    const usersInRoom = Array.from(rooms.get(roomId).entries()).map(([id, name]) => ({ id, name }));
-    io.to(roomId).emit('user-list-update', usersInRoom);
-    socket.to(roomId).emit('notification', { message: `${userName} joined the room` });
+    const room = rooms.get(roomId);
+    if (room) {
+      const usersInRoom = Array.from(room.entries()).map(([id, name]) => ({ id, name }));
+      io.to(roomId).emit('user-list-update', usersInRoom);
+      socket.to(roomId).emit('notification', { message: `${userName} joined the room` });
+    }
   });
 
   socket.on('draw', async (data) => {
