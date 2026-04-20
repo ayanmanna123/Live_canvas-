@@ -95,6 +95,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
   const [textInput, setTextInput] = useState(null); // { x, y, value, worldX, worldY }
   
   const currentStroke = useRef(null);
+  const deletedStrokesThisSession = useRef(new Set());
   const { socket } = useSocket();
 
   // Focus textarea when it appears
@@ -295,14 +296,18 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
   };
 
   const handleEraserCollision = (worldX, worldY) => {
-    const eraseRadius = size * 2;
+    // Increased radius for better feel (base size * 3 + 5px buffer)
+    const eraseRadius = (size * 3) + 5;
     
-    // Use the current strokes from state for collision detection
     strokes.forEach(stroke => {
+      // Don't try to delete the same stroke multiple times in one drag
+      if (deletedStrokesThisSession.current.has(stroke.id)) return;
+
       let collided = false;
       if (stroke.type === 'text') {
         const dist = Math.sqrt((worldX - stroke.points[0].x) ** 2 + (worldY - stroke.points[0].y) ** 2);
-        if (dist < eraseRadius + 10) collided = true;
+        // Larger buffer for text collision
+        if (dist < eraseRadius + 15) collided = true;
       } else {
         for (let i = 0; i < stroke.points.length - 1; i++) {
           const dist = getDistancePointToSegment(
@@ -310,6 +315,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
             stroke.points[i].x, stroke.points[i].y, 
             stroke.points[i+1].x, stroke.points[i+1].y
           );
+          // Combine eraser radius with stroke width for accurate hit testing
           if (dist < eraseRadius + (stroke.size / 2)) {
             collided = true;
             break;
@@ -318,6 +324,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
       }
 
       if (collided) {
+        deletedStrokesThisSession.current.add(stroke.id);
         dispatch({ type: 'DELETE_STROKE', strokeId: stroke.id });
         socket.emit('delete-stroke', { roomId, strokeId: stroke.id });
       }
@@ -480,6 +487,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
 
     if (!isDrawing) return;
     setIsDrawing(false);
+    deletedStrokesThisSession.current.clear();
 
     if (tool === 'eraser' || tool === 'text') return;
 
