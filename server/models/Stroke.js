@@ -6,6 +6,12 @@ const strokeSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  id: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
   userId: {
     type: String,
     required: true

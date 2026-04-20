@@ -143,7 +143,7 @@ io.on('connection', (socket) => {
     // Remove from DB
     if (mongoose.connection.readyState === 1) {
       try {
-        await Stroke.deleteOne({ _id: strokeId });
+        await Stroke.deleteOne({ id: strokeId });
       } catch (error) {
         // If strokeId was a nanoid instead of ObjectId, fallback to a custom field if needed
         // For now, we assume strokeId is the MongoDB _id

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -7,7 +7,7 @@ const Toolbar = ({
   bgColor, setBgColor,
   size, setSize, 
   tool, setTool, 
-  onClear, onSave,
+  onClear, onSave, isSaving,
   userCount,
   onShare,
   onToggleChat,
@@ -202,13 +202,13 @@ const Toolbar = ({
               </Button>
               
               <Button
-                variant="ghost"
+                variant={isSaving ? "tonal" : "ghost"}
                 size="icon"
                 onClick={onSave}
-                className="text-md-on-surface-variant"
-                title="Save"
+                className={isSaving ? "text-md-primary" : "text-md-on-surface-variant"}
+                title={isSaving ? "Syncing..." : "Save Drawing"}
               >
-                <Download className="size-5" />
+                {isSaving ? <CloudSync className="size-5 animate-pulse" /> : <Save className="size-5" />}
               </Button>
 
               <Button

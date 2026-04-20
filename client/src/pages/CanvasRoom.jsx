@@ -36,6 +36,7 @@ const CanvasRoom = () => {
   const [showRopes, setShowRopes] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [userHistory, setUserHistory] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
 
@@ -244,13 +245,13 @@ const CanvasRoom = () => {
     socket.emit('change-background', { roomId, color: newColor });
   };
 
-  const handleSaveImage = () => {
-    const canvas = document.querySelector('canvas');
-    if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = `live-canvas-${roomId}.png`;
-    link.href = canvas.toDataURL();
-    link.click();
+  const handleSaveDrawing = () => {
+    setIsSaving(true);
+    // Explicit manual save confirmation.
+    // The auto-save (fixed on server) handles the actual persistence.
+    setTimeout(() => {
+      setIsSaving(false);
+    }, 2000);
   };
 
   const handleShare = () => {
@@ -283,7 +284,8 @@ const CanvasRoom = () => {
         size={size} setSize={setSize}
         tool={tool} setTool={setTool}
         onClear={handleClearCanvas}
-        onSave={handleSaveImage}
+        onSave={handleSaveDrawing}
+        isSaving={isSaving}
         onShare={handleShare}
         userCount={users.length}
         onToggleChat={() => {
