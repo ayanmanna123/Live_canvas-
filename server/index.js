@@ -265,8 +265,15 @@ io.on('connection', (socket) => {
     if (data.action === 'pause') room.movie.playing = false;
     if (data.action === 'seek') room.movie.currentTime = data.currentTime;
     
-    // Broadcast update including masterId
-    socket.to(roomId).emit('movie-update-remote', { ...data, masterId: room.movie.masterId });
+    // Broadcast update including masterId to everyone in the room
+    io.to(roomId).emit('movie-update-remote', { ...data, masterId: room.movie.masterId });
+  });
+
+  socket.on('movie-time-report', (data) => {
+    const { roomId, currentTime } = data;
+    if (roomId && rooms.has(roomId)) {
+      rooms.get(roomId).movie.currentTime = currentTime;
+    }
   });
 
   socket.on('request-master-sync', (data) => {
@@ -280,7 +287,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('master-time-response', (data) => {
-    const { requesterId, currentTime } = data;
+    const { requesterId, currentTime, roomId } = data;
+    
+    // Update server state with the master's latest time
+    if (roomId && rooms.has(roomId)) {
+      rooms.get(roomId).movie.currentTime = currentTime;
+    }
+    
     if (requesterId) {
       io.to(requesterId).emit('sync-to-master', { currentTime });
     }

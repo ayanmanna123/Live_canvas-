@@ -8,6 +8,7 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
   const playerRef = useRef(null);
   const nativeRef = useRef(null);
   const isRemoteUpdate = useRef(false);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
 
   // Helper to determine if we should use native player
   const shouldUseNative = (url) => {
@@ -23,6 +24,13 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
     if (url) setInputUrl(url);
   }, [url]);
 
+  // Handle Playback Rate for Native Video
+  useEffect(() => {
+    if (isNative && nativeRef.current) {
+      nativeRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate, isNative]);
+
   // Handle Remote Sync Effects
   useEffect(() => {
     if (!socket) return;
@@ -30,15 +38,35 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
     const handleRemoteUpdate = (data) => {
       isRemoteUpdate.current = true;
       
-      if (data.action === 'play') {
+      const targetAction = data.action;
+
+      if (targetAction === 'play' || (data.playing && !targetAction)) {
         if (isNative) nativeRef.current?.play().catch(() => {});
-      } else if (data.action === 'pause') {
+        setPlaying(true);
+      } else if (targetAction === 'pause' || (!data.playing && !targetAction && data.url)) {
         if (isNative) nativeRef.current?.pause();
-      } else if (data.action === 'seek') {
-        if (isNative) {
-          if (nativeRef.current) nativeRef.current.currentTime = data.currentTime;
+        setPlaying(false);
+      }
+      
+      if (targetAction === 'seek' || (!targetAction && data.currentTime > 0)) {
+        const timeToSeek = data.currentTime;
+        
+        // Only seek if far away (> 5s) or if it's a manual seek action
+        const localTime = isNative ? nativeRef.current?.currentTime : playerRef.current?.getCurrentTime();
+        const diff = Math.abs(timeToSeek - (localTime || 0));
+        
+        if (targetAction === 'seek' || diff > 5) {
+          if (isNative) {
+            if (nativeRef.current) nativeRef.current.currentTime = timeToSeek;
+          } else {
+            playerRef.current?.seekTo(timeToSeek, 'seconds');
+          }
+          setPlaybackRate(1.0); // Reset rate on hard sync
+        } else if (diff > 0.5 && socket.id !== masterId) {
+          // Adaptive playback rate for small drifts
+          setPlaybackRate(timeToSeek > localTime ? 1.1 : 0.9);
         } else {
-          playerRef.current?.seekTo(data.currentTime, 'seconds');
+          setPlaybackRate(1.0);
         }
       }
       
@@ -48,7 +76,7 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
     const handleGetMasterTime = ({ requesterId }) => {
       if (socket.id === masterId) {
         const time = isNative ? nativeRef.current?.currentTime : playerRef.current?.getCurrentTime();
-        socket.emit('master-time-response', { requesterId, currentTime: time || 0 });
+        socket.emit('master-time-response', { requesterId, currentTime: time || 0, roomId });
       }
     };
 
@@ -59,6 +87,7 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
       } else {
         playerRef.current?.seekTo(masterTime, 'seconds');
       }
+      setPlaybackRate(1.0);
       setTimeout(() => { isRemoteUpdate.current = false; }, 500);
     };
 
@@ -66,12 +95,22 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
     socket.on('get-master-time', handleGetMasterTime);
     socket.on('sync-to-master', handleSyncToMaster);
     
+    const reportInterval = setInterval(() => {
+      if (socket.id === masterId && url) {
+        const time = isNative ? nativeRef.current?.currentTime : playerRef.current?.getCurrentTime();
+        if (time > 0) {
+          socket.emit('movie-time-report', { roomId, currentTime: time });
+        }
+      }
+    }, 3000); // More frequent heartbeats for adaptive sync (3s)
+
     return () => {
       socket.off('movie-update-remote', handleRemoteUpdate);
       socket.off('get-master-time', handleGetMasterTime);
       socket.off('sync-to-master', handleSyncToMaster);
+      clearInterval(reportInterval);
     };
-  }, [socket, url, masterId, isNative]);
+  }, [socket, url, masterId, isNative, roomId]);
 
   const handleUrlSubmit = (e) => {
     e.preventDefault();
@@ -102,6 +141,21 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
     socket.emit('movie-update', { roomId, action: 'seek', currentTime: seconds });
   };
 
+  const handleInitialSync = () => {
+    if (currentTime > 0) {
+      if (isNative) {
+        if (nativeRef.current) nativeRef.current.currentTime = currentTime;
+      } else {
+        playerRef.current?.seekTo(currentTime, 'seconds');
+      }
+    }
+    if (playing) {
+      if (isNative) nativeRef.current?.play().catch(() => {});
+    } else {
+       if (isNative) nativeRef.current?.pause();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -123,6 +177,12 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
               <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-full">
                 <Crown className="h-3 w-3 text-amber-500" />
                 <span className="text-[10px] font-bold text-amber-500 uppercase">Master</span>
+              </div>
+            )}
+            {playbackRate !== 1.0 && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full animate-pulse">
+                <RefreshCw className="h-3 w-3 text-indigo-400 rotate" />
+                <span className="text-[10px] font-bold text-indigo-400 uppercase">Syncing...</span>
               </div>
             )}
           </div>
@@ -173,6 +233,8 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
                 controls
                 autoPlay={playing}
                 preload="auto"
+                playsInline
+                onLoadedMetadata={handleInitialSync}
                 onPlay={onPlay}
                 onPause={onPause}
                 onSeeked={(e) => handleSeek(e.target.currentTime)}
@@ -184,6 +246,7 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
                 width="100%"
                 height="100%"
                 playing={playing}
+                playbackRate={playbackRate}
                 controls={true}
                 playsinline
                 config={{
@@ -197,6 +260,7 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
                 onPlay={onPlay}
                 onPause={onPause}
                 onSeek={handleSeek}
+                onReady={handleInitialSync}
                 onError={(e) => console.error('ReactPlayer Error:', e)}
               />
             )
