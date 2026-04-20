@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Maximize2, Minimize2, GripHorizontal } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, PhoneOff, Maximize2, Minimize2, GripHorizontal, MonitorUp } from 'lucide-react';
 import { Button } from './ui/button';
 
-const VideoCall = ({ localStream, remoteStreams, onEndCall, toggleAudio, toggleVideo, isAudioMuted, isVideoMuted }) => {
+const VideoCall = ({ localStream, remoteStreams, onEndCall, toggleAudio, toggleVideo, isAudioMuted, isVideoMuted, isScreenSharing, onToggleScreenShare }) => {
   const [isMinimized, setIsMinimized] = useState(false);
 
   return (
@@ -43,11 +43,17 @@ const VideoCall = ({ localStream, remoteStreams, onEndCall, toggleAudio, toggleV
                 playsInline
                 className={`w-full h-full object-cover ${isVideoMuted ? 'hidden' : ''}`}
               />
-              {isVideoMuted && (
+              {isVideoMuted && !isScreenSharing && (
                 <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
                   <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
                     <VideoOff className="h-6 w-6 text-slate-500" />
                   </div>
+                </div>
+              )}
+              {isScreenSharing && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-indigo-600/20 backdrop-blur-sm">
+                  <MonitorUp className="h-8 w-8 text-indigo-400 mb-2 animate-bounce" />
+                  <span className="text-[10px] font-black text-indigo-200 uppercase tracking-widest">Sharing Screen</span>
                 </div>
               )}
               <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-black/50 backdrop-blur-md text-[10px] font-bold text-white">
@@ -95,6 +101,16 @@ const VideoCall = ({ localStream, remoteStreams, onEndCall, toggleAudio, toggleV
               className={`rounded-2xl transition-all ${isVideoMuted ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
             >
               {isVideoMuted ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+            </Button>
+            
+            <Button
+              variant="tonal"
+              size="icon"
+              onClick={onToggleScreenShare}
+              className={`rounded-2xl transition-all ${isScreenSharing ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+              title={isScreenSharing ? "Stop Sharing Screen" : "Share Screen"}
+            >
+              <MonitorUp className="h-5 w-5" />
             </Button>
 
             <Button

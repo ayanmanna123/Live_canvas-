@@ -53,7 +53,9 @@ const CanvasRoom = () => {
   const [remoteStreams, setRemoteStreams] = useState({}); // { socketId: { stream, userName } }
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const peersRef = useRef({}); // { socketId: PeerInstance }
+  const cameraStreamRef = useRef(null);
 
   const { permission, requestPermission } = usePushNotifications(socket, roomId, socket?.id, userName);
 
@@ -219,6 +221,7 @@ const CanvasRoom = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setLocalStream(stream);
+      cameraStreamRef.current = stream;
       setInCall(true);
 
       // Initiate calls to everyone else in the room
@@ -236,15 +239,88 @@ const CanvasRoom = () => {
     }
   };
 
+  const handleToggleScreenShare = async () => {
+    if (!isScreenSharing) {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const screenTrack = screenStream.getVideoTracks()[0];
+        
+        // Handle stop share from browser UI
+        screenTrack.onended = () => {
+          stopScreenShare(screenTrack);
+        };
+
+        // Replace track for all peers
+        Object.values(peersRef.current).forEach(peer => {
+          const videoTrack = localStream.getVideoTracks()[0];
+          if (videoTrack) {
+            peer.replaceTrack(videoTrack, screenTrack, localStream);
+          }
+        });
+
+        // Update local stream to show screen
+        const newStream = new MediaStream([
+          ...localStream.getAudioTracks(),
+          screenTrack
+        ]);
+        setLocalStream(newStream);
+        setIsScreenSharing(true);
+      } catch (err) {
+        console.error('Failed to get screen stream', err);
+      }
+    } else {
+      const screenTrack = localStream.getVideoTracks()[0];
+      stopScreenShare(screenTrack);
+    }
+  };
+
+  const stopScreenShare = async (screenTrack) => {
+    if (screenTrack) screenTrack.stop();
+    
+    // Re-acquire camera if we don't have it or it's stopped
+    let camStream = cameraStreamRef.current;
+    if (!camStream || !camStream.getVideoTracks()[0] || camStream.getVideoTracks()[0].readyState === 'ended') {
+      try {
+        camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        cameraStreamRef.current = camStream;
+      } catch (err) {
+        console.error('Failed to re-acquire camera', err);
+        return;
+      }
+    }
+
+    const camVideoTrack = camStream.getVideoTracks()[0];
+    
+    // Replace track back for all peers
+    Object.values(peersRef.current).forEach(peer => {
+      const currentVideoTrack = localStream.getVideoTracks()[0];
+      if (currentVideoTrack) {
+        peer.replaceTrack(currentVideoTrack, camVideoTrack, localStream);
+      }
+    });
+
+    const restoredStream = new MediaStream([
+      ...localStream.getAudioTracks(),
+      camVideoTrack
+    ]);
+    setLocalStream(restoredStream);
+    setIsScreenSharing(false);
+  };
+
   const handleEndCall = () => {
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
+    }
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach(track => track.stop());
+      cameraStreamRef.current = null;
     }
     Object.values(peersRef.current).forEach(peer => peer.destroy());
     peersRef.current = {};
     setLocalStream(null);
     setRemoteStreams({});
     setInCall(false);
+    setIsScreenSharing(false);
   };
 
   const toggleAudio = () => {
@@ -357,6 +433,8 @@ const CanvasRoom = () => {
           toggleVideo={toggleVideo}
           isAudioMuted={isAudioMuted}
           isVideoMuted={isVideoMuted}
+          isScreenSharing={isScreenSharing}
+          onToggleScreenShare={handleToggleScreenShare}
         />
       )}
 
