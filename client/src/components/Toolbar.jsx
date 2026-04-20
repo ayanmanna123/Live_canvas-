@@ -44,23 +44,26 @@ const Toolbar = ({
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 sm:bottom-auto sm:right-auto sm:top-6 sm:left-1/2 sm:-translate-x-1/2 z-50 flex flex-col items-end sm:items-center gap-4">
+    <>
       {/* Mobile Toggle Button - MD3 FAB Style */}
-      <Button
-        variant="fab"
-        size="icon"
-        onClick={() => setIsOpen(!isOpen)}
-        className="sm:hidden size-14 rounded-2xl z-50"
-      >
-        {isOpen ? <X className="size-6 text-white" /> : <Menu className="size-6 text-white" />}
-      </Button>
+      <div className="fixed bottom-6 right-6 sm:hidden z-[60]">
+        <Button
+          variant="fab"
+          size="icon"
+          onClick={() => setIsOpen(!isOpen)}
+          className="size-14 rounded-2xl shadow-2xl bg-md-primary"
+        >
+          {isOpen ? <X className="size-6 text-white" /> : <Menu className="size-6 text-white" />}
+        </Button>
+      </div>
 
-      {/* Toolbar Content */}
-      {isOpen && (
-        <div className="flex flex-col sm:flex-row items-center gap-4 p-4 sm:px-6 sm:py-3 rounded-3xl bg-md-surface-container/95 backdrop-blur-xl border border-md-outline/10 md-shadow-2 animate-in fade-in zoom-in duration-300 max-h-[75vh] sm:max-h-none overflow-y-auto sm:overflow-visible custom-scrollbar">
-          
+      {/* Top Center Toolbar - Brushes & Colors */}
+      <div 
+        className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out sm:block ${isOpen ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none sm:translate-y-0 sm:opacity-100 sm:pointer-events-auto'}`}
+      >
+        <div className="flex items-center gap-4 p-2 sm:px-6 sm:py-3 rounded-[2rem] bg-md-surface-container/90 backdrop-blur-2xl border border-md-outline/10 md-shadow-2">
           {/* Tool Selection */}
-          <div className="flex flex-col sm:flex-row items-center gap-2 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-md-outline/10 w-full sm:w-auto">
+          <div className="flex items-center gap-1 pr-4 border-r border-md-outline/10">
             {brushes.map((b) => {
               const isActive = tool === b.id;
               return (
@@ -69,7 +72,7 @@ const Toolbar = ({
                   variant={isActive ? "default" : "ghost"}
                   size="icon"
                   onClick={() => setTool(b.id)}
-                  className={`size-10 ${isActive ? "md-shadow-1" : "text-md-on-surface-variant hover:bg-md-primary/10"}`}
+                  className={`size-10 rounded-full transition-all duration-300 ${isActive ? "md-shadow-1 scale-110" : "text-md-on-surface-variant hover:bg-md-primary/10"}`}
                   title={b.label}
                 >
                   <b.icon className="size-5" />
@@ -79,172 +82,119 @@ const Toolbar = ({
           </div>
 
           {/* Color Selection */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-md-outline/10 w-full sm:w-auto">
-            <div className="grid grid-cols-5 sm:flex gap-2">
+          <div className="flex items-center gap-4">
+            <div className="flex gap-1.5 px-2">
               {colors.map((c) => (
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`h-6 w-6 rounded-full border-2 md-transition hover:scale-125 active:scale-95 ${color === c ? 'border-md-primary ring-2 ring-md-primary/20 scale-110 shadow-sm' : 'border-transparent opacity-80 hover:opacity-100'}`}
+                  className={`h-7 w-7 rounded-full border-2 md-transition hover:scale-125 active:scale-95 ${color === c ? 'border-md-primary ring-2 ring-md-primary/20 scale-110 shadow-md' : 'border-transparent opacity-80 hover:opacity-100'}`}
                   style={{ backgroundColor: c }}
                   title="Brush Color"
                 />
               ))}
             </div>
             
-            <div className="flex items-center gap-3 pl-4 border-l border-md-outline/10 ml-1">
-              <div className="flex flex-col items-center gap-0.5" title="Background Color">
-                <div className="relative group">
-                  <input 
-                    type="color" 
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="w-10 h-10 rounded-xl bg-md-surface-container-low cursor-pointer p-0.5 border-2 border-md-outline/20 overflow-hidden md-transition hover:border-md-primary"
-                  />
-                  <div className="absolute -top-2 -right-2 bg-md-primary text-white p-1 rounded-md shadow-sm pointer-events-none">
-                    <PaintBucket className="size-3" />
-                  </div>
+            <div className="flex items-center pl-4 border-l border-md-outline/10">
+              <div className="relative group" title="Background Color">
+                <input 
+                  type="color" 
+                  value={bgColor}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="w-10 h-10 rounded-xl bg-md-surface-container-low cursor-pointer p-0.5 border-2 border-md-outline/20 overflow-hidden md-transition hover:border-md-primary"
+                />
+                <div className="absolute -top-1.5 -right-1.5 bg-md-primary text-white p-1 rounded-md shadow-sm pointer-events-none">
+                  <PaintBucket className="size-3" />
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* Bottom Right Toolbar - Actions & Size */}
+      <div 
+        className={`fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 transition-all duration-500 ease-out sm:block ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none sm:translate-y-0 sm:opacity-100 sm:pointer-events-auto'}`}
+        style={{ 
+          transform: isChatOpen && window.innerWidth >= 640 
+            ? 'translateX(-340px)' 
+            : undefined 
+        }}
+      >
+        <div className="flex flex-col items-center gap-3 p-3 rounded-[2rem] bg-md-surface-container/90 backdrop-blur-2xl border border-md-outline/10 md-shadow-2">
           {/* Size Selection */}
-          <div className="flex items-center justify-between sm:justify-start gap-4 pb-4 sm:pb-0 sm:pr-4 border-b sm:border-b-0 sm:border-r border-md-outline/10 w-full sm:w-auto">
-            <span className="sm:hidden text-xs font-bold text-md-on-surface-variant uppercase tracking-wider">Size</span>
-            <div className="flex items-center gap-1 bg-md-secondary-container/50 px-3 py-1 rounded-full border border-md-outline/5 hover:bg-md-secondary-container md-transition">
-              <select 
-                value={size}
-                onChange={(e) => setSize(Number(e.target.value))}
-                className="bg-transparent text-md-on-secondary-container text-xs font-bold focus:outline-none cursor-pointer pr-1"
-              >
-                {sizes.map(s => (
-                  <option key={s} value={s} className="bg-md-surface-container-low">{s}px</option>
-                ))}
-              </select>
-            </div>
+          <div className="flex items-center bg-md-secondary-container/50 px-3 py-2 rounded-2xl border border-md-outline/5 hover:bg-md-secondary-container md-transition w-full justify-center">
+            <select 
+              value={size}
+              onChange={(e) => setSize(Number(e.target.value))}
+              className="bg-transparent text-md-on-secondary-container text-sm font-bold focus:outline-none cursor-pointer"
+            >
+              {sizes.map(s => (
+                <option key={s} value={s} className="bg-md-surface-container-low">{s}px</option>
+              ))}
+            </select>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 pt-2 sm:pt-0">
-            <div className="flex items-center gap-1 sm:pr-2 sm:border-r border-md-outline/10 sm:mr-1">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={onUndo}
-                className="text-md-on-surface-variant hover:text-md-primary"
-                title="Undo (Ctrl+Z)"
-              >
-                <Undo2 className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={onRedo}
-                className="text-md-on-surface-variant hover:text-md-primary"
-                title="Redo (Ctrl+Y)"
-              >
-                <Redo2 className="size-4" />
-              </Button>
-            </div>
+          {/* Undo/Redo Group */}
+          <div className="flex flex-col items-center gap-1 py-3 border-y border-md-outline/10 w-full">
+            <Button variant="ghost" size="icon" onClick={onUndo} title="Undo (Ctrl+Z)" className="text-md-on-surface-variant hover:text-md-primary">
+              <Undo2 className="size-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onRedo} title="Redo (Ctrl+Y)" className="text-md-on-surface-variant hover:text-md-primary">
+              <Redo2 className="size-5" />
+            </Button>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant={isHistoryOpen ? "tonal" : "ghost"}
-                size="icon"
-                onClick={onToggleHistory}
-                title="Activity History"
-              >
-                <History className="size-5" />
-              </Button>
+          {/* Utility Group */}
+          <div className="flex flex-col items-center gap-2">
+            <Button variant={isHistoryOpen ? "tonal" : "ghost"} size="icon" onClick={onToggleHistory} title="Activity History" className="rounded-full">
+              <History className="size-5" />
+            </Button>
 
-              <Button
-                variant={inCall ? "tonal" : "ghost"}
-                size="icon"
-                onClick={onToggleCall}
-                className={inCall ? "text-md-primary" : "text-md-on-surface-variant"}
-                title={inCall ? "Leave Call" : "Join Video Call"}
-              >
-                <Video className="size-5" />
-              </Button>
+            <Button variant={inCall ? "tonal" : "ghost"} size="icon" onClick={onToggleCall} title={inCall ? "Leave Call" : "Join Video Call"} className={`rounded-full ${inCall ? "text-md-primary" : "text-md-on-surface-variant"}`}>
+              <Video className="size-5" />
+            </Button>
 
-              <Button
-                variant={showRopes ? "tonal" : "ghost"}
-                size="icon"
-                onClick={() => setShowRopes(!showRopes)}
-                className={showRopes ? "text-md-primary" : "text-md-on-surface-variant"}
-                title={showRopes ? "Hide Ropes" : "Show Ropes"}
-              >
-                <Spline className="size-5" />
-              </Button>
+            <Button variant={showRopes ? "tonal" : "ghost"} size="icon" onClick={() => setShowRopes(!showRopes)} title={showRopes ? "Hide Ropes" : "Show Ropes"} className={`rounded-full ${showRopes ? "text-md-primary" : "text-md-on-surface-variant"}`}>
+              <Spline className="size-5" />
+            </Button>
 
-              <Button
-                variant={autoMode ? "tonal" : "ghost"}
-                size="icon"
-                onClick={() => setAutoMode(!autoMode)}
-                className={autoMode ? "text-md-primary" : "text-md-on-surface-variant"}
-                title={autoMode ? "Auto Mode: OFF" : "Auto Mode: ON"}
-              >
-                <Wand2 className={`size-5 ${autoMode ? 'animate-pulse' : ''}`} />
-              </Button>
+            <Button variant={autoMode ? "tonal" : "ghost"} size="icon" onClick={() => setAutoMode(!autoMode)} title={autoMode ? "Auto Mode: ON" : "Auto Mode: OFF"} className={`rounded-full ${autoMode ? "text-md-primary" : "text-md-on-surface-variant"}`}>
+              <Wand2 className={`size-5 ${autoMode ? 'animate-pulse' : ''}`} />
+            </Button>
 
-              <Button
-                variant={isChatOpen ? "tonal" : "ghost"}
-                size="icon"
-                onClick={onToggleChat}
-                className="relative"
-                title="Chat"
-              >
-                <MessageSquare className="size-5" />
-                {unreadCount > 0 && !isChatOpen && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-md-tertiary text-[10px] font-bold text-md-on-tertiary border-2 border-md-surface-container animate-in zoom-in duration-200">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClear}
-                className="text-md-on-surface-variant hover:bg-red-500/10 hover:text-red-500"
-                title="Clear Canvas"
-              >
-                <Trash2 className="size-5" />
-              </Button>
-              
-              <Button
-                variant={isSaving ? "tonal" : "ghost"}
-                size="icon"
-                onClick={onSave}
-                className={isSaving ? "text-md-primary" : "text-md-on-surface-variant"}
-                title={isSaving ? "Syncing..." : "Save Drawing"}
-              >
-                {isSaving ? <CloudSync className="size-5 animate-pulse" /> : <Save className="size-5" />}
-              </Button>
+            <Button variant={isChatOpen ? "tonal" : "ghost"} size="icon" onClick={onToggleChat} className="relative rounded-full" title="Chat">
+              <MessageSquare className="size-5" />
+              {unreadCount > 0 && !isChatOpen && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-md-tertiary text-[10px] font-bold text-md-on-tertiary border-2 border-md-surface-container animate-in zoom-in duration-200">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Button>
+            
+            <Button variant="ghost" size="icon" onClick={onClear} className="text-md-on-surface-variant hover:bg-red-500/10 hover:text-red-500 rounded-full" title="Clear Canvas">
+              <Trash2 className="size-5" />
+            </Button>
+            
+            <Button variant={isSaving ? "tonal" : "ghost"} size="icon" onClick={onSave} className={`rounded-full ${isSaving ? "text-md-primary" : "text-md-on-surface-variant"}`} title={isSaving ? "Syncing..." : "Save Drawing"}>
+              {isSaving ? <CloudSync className="size-5 animate-pulse" /> : <Save className="size-5" />}
+            </Button>
 
-              <Button
-                variant="tonal"
-                size="icon"
-                onClick={onShare}
-                className="rounded-full shadow-sm"
-                title="Share Room"
-              >
+            <div className="pt-2 border-t border-md-outline/10 w-full flex justify-center">
+              <Button variant="tonal" size="icon" onClick={onShare} className="rounded-full shadow-sm bg-md-primary text-white hover:brightness-110 active:scale-95 transition-all" title="Share Room">
                 <Share2 className="size-5" />
               </Button>
             </div>
           </div>
 
           {/* User Indicator */}
-          <div className="hidden sm:flex items-center gap-3 pl-4 border-l border-md-outline/10 ml-1">
-            <div className="flex items-center gap-2 bg-md-primary/10 px-3 py-1.5 rounded-full border border-md-primary/10">
-              <Users className="size-4 text-md-primary" />
-              <span className="text-xs font-bold text-md-primary">{userCount}</span>
-            </div>
+          <div className="hidden lg:flex flex-col items-center gap-1 bg-md-primary/10 p-2 rounded-2xl border border-md-primary/10 mt-1">
+            <Users className="size-4 text-md-primary" />
+            <span className="text-[10px] font-black text-md-primary leading-none">{userCount}</span>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
 
