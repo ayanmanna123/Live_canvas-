@@ -29,6 +29,7 @@ const CanvasRoom = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isUsersListOpen, setIsUsersListOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [showRopes, setShowRopes] = useState(true);
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -154,6 +155,8 @@ const CanvasRoom = () => {
         hasUnread={hasUnread}
         onUndo={() => canvasRef.current?.undo()}
         onRedo={() => canvasRef.current?.redo()}
+        showRopes={showRopes}
+        setShowRopes={setShowRopes}
       />
 
       {/* Sidebar - Users List & Leave Button */}
@@ -220,6 +223,7 @@ const CanvasRoom = () => {
         size={size}
         tool={tool}
         onPan={setPanOffset}
+        showRopes={showRopes}
       />
 
       {/* Remote Cursors Presence Layer */}

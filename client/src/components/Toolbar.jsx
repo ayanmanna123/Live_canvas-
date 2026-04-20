@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -14,7 +14,9 @@ const Toolbar = ({
   isChatOpen,
   hasUnread,
   onUndo,
-  onRedo
+  onRedo,
+  showRopes,
+  setShowRopes
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   
@@ -141,6 +143,16 @@ const Toolbar = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant={showRopes ? "tonal" : "ghost"}
+                size="icon"
+                onClick={() => setShowRopes(!showRopes)}
+                className={showRopes ? "text-md-primary" : "text-md-on-surface-variant"}
+                title={showRopes ? "Hide Ropes" : "Show Ropes"}
+              >
+                <Spline className="size-5" />
+              </Button>
+
               <Button
                 variant={isChatOpen ? "tonal" : "ghost"}
                 size="icon"

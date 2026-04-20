@@ -85,7 +85,8 @@ io.on('connection', (socket) => {
     if (!roomId || !stroke) return;
     
     // Broadcast to others immediately for low latency
-    socket.to(roomId).emit('draw-remote', stroke);
+    const strokeWithUser = { ...stroke, userId: socket.id };
+    socket.to(roomId).emit('draw-remote', strokeWithUser);
 
     // Save to database (only if DB is connected)
     if (mongoose.connection.readyState === 1) {

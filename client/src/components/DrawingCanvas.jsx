@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { useSocket } from '../contexts/SocketContext';
 import { nanoid } from 'nanoid';
+import { getUserColor } from '../lib/userColor';
 
-const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }, ref) => {
+const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, showRopes }, ref) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -129,6 +130,50 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     ctx.save();
     ctx.translate(panOffset.x, panOffset.y);
     
+    // Draw ropes first (behind text and strokes)
+    if (showRopes) {
+      const textStrokesByUser = strokes
+        .filter(s => s.type === 'text')
+        .reduce((acc, s) => {
+          const uid = s.userId || 'anonymous';
+          if (!acc[uid]) acc[uid] = [];
+          acc[uid].push(s);
+          return acc;
+        }, {});
+
+      Object.entries(textStrokesByUser).forEach(([uid, userStrokes]) => {
+        if (userStrokes.length < 2) return;
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.strokeStyle = getUserColor(uid);
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.setLineDash([5, 5]); // Rope-like dashed style
+        ctx.globalAlpha = 0.6;
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = getUserColor(uid);
+
+        for (let i = 0; i < userStrokes.length - 1; i++) {
+          const p1 = userStrokes[i].points[0];
+          const p2 = userStrokes[i+1].points[0];
+          
+          ctx.moveTo(p1.x, p1.y);
+          
+          // Calculate control point for the "carve" (curve)
+          const mx = (p1.x + p2.x) / 2;
+          const my = (p1.y + p2.y) / 2;
+          const dist = Math.sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2);
+          const hang = Math.min(dist * 0.2, 50); // Dynamic hang based on distance
+          
+          ctx.quadraticCurveTo(mx, my + hang, p2.x, p2.y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+
     strokes.forEach(stroke => {
       if (stroke.type === 'text') {
         ctx.save();
@@ -213,12 +258,14 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     if (!socket) return;
 
     socket.on('draw-remote', (stroke) => {
+      // Server now sends { ...stroke, userId }
       setStrokes(prev => [...prev, stroke]);
     });
 
     socket.on('canvas-history', (history) => {
       const formattedHistory = history.map(s => ({
         id: s._id || s.id,
+        userId: s.userId, // Capture userId from DB
         points: s.points,
         color: s.color,
         size: s.size,
@@ -274,6 +321,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
     setIsDrawing(true);
     currentStroke.current = {
       id: nanoid(),
+      userId: socket.id, // Track local user
       type: 'freehand',
       points: [{ x: worldX, y: worldY }],
       color,
@@ -383,6 +431,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan }
       if (val) {
         const textStroke = {
           id: nanoid(),
+          userId: socket.id, // Track local user
           type: 'text',
           content: val,
           points: [{ x: textInput.worldX, y: textInput.worldY }],
