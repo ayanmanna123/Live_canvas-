@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactPlayer from 'react-player';
-import { X, Play, Pause, RotateCcw, Link2, MonitorPlay } from 'lucide-react';
+import { X, Link2, MonitorPlay, Crown, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const WatchParty = ({ isOpen, onClose, roomId, socket }) => {
-  const [url, setUrl] = useState('');
-  const [playing, setPlaying] = useState(false);
-  const [inputUrl, setInputUrl] = useState('');
+const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, setPlaying, currentTime, setCurrentTime, masterId }) => {
+  const [inputUrl, setInputUrl] = useState(url || '');
   const playerRef = useRef(null);
   const nativeRef = useRef(null);
   const isRemoteUpdate = useRef(false);
@@ -18,32 +16,62 @@ const WatchParty = ({ isOpen, onClose, roomId, socket }) => {
     return directPatterns.some(p => url.toLowerCase().includes(p)) || !ReactPlayer.canPlay(url);
   };
 
+  const isNative = shouldUseNative(url);
+
+  // Sync internal input when external URL changes
+  useEffect(() => {
+    if (url) setInputUrl(url);
+  }, [url]);
+
+  // Handle Remote Sync Effects
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('movie-update-remote', (data) => {
+    const handleRemoteUpdate = (data) => {
       isRemoteUpdate.current = true;
-      if (data.action === 'url') {
-        setUrl(data.url);
-        setInputUrl(data.url);
-      } else if (data.action === 'play') {
-        setPlaying(true);
-        if (shouldUseNative(url)) nativeRef.current?.play().catch(() => {});
+      
+      if (data.action === 'play') {
+        if (isNative) nativeRef.current?.play().catch(() => {});
       } else if (data.action === 'pause') {
-        setPlaying(false);
-        if (shouldUseNative(url)) nativeRef.current?.pause();
+        if (isNative) nativeRef.current?.pause();
       } else if (data.action === 'seek') {
-        if (shouldUseNative(url)) {
+        if (isNative) {
           if (nativeRef.current) nativeRef.current.currentTime = data.currentTime;
         } else {
           playerRef.current?.seekTo(data.currentTime, 'seconds');
         }
       }
+      
       setTimeout(() => { isRemoteUpdate.current = false; }, 500);
-    });
+    };
 
-    return () => socket.off('movie-update-remote');
-  }, [socket, url]);
+    const handleGetMasterTime = ({ requesterId }) => {
+      if (socket.id === masterId) {
+        const time = isNative ? nativeRef.current?.currentTime : playerRef.current?.getCurrentTime();
+        socket.emit('master-time-response', { requesterId, currentTime: time || 0 });
+      }
+    };
+
+    const handleSyncToMaster = ({ currentTime: masterTime }) => {
+      isRemoteUpdate.current = true;
+      if (isNative) {
+        if (nativeRef.current) nativeRef.current.currentTime = masterTime;
+      } else {
+        playerRef.current?.seekTo(masterTime, 'seconds');
+      }
+      setTimeout(() => { isRemoteUpdate.current = false; }, 500);
+    };
+
+    socket.on('movie-update-remote', handleRemoteUpdate);
+    socket.on('get-master-time', handleGetMasterTime);
+    socket.on('sync-to-master', handleSyncToMaster);
+    
+    return () => {
+      socket.off('movie-update-remote', handleRemoteUpdate);
+      socket.off('get-master-time', handleGetMasterTime);
+      socket.off('sync-to-master', handleSyncToMaster);
+    };
+  }, [socket, url, masterId, isNative]);
 
   const handleUrlSubmit = (e) => {
     e.preventDefault();
@@ -64,12 +92,15 @@ const WatchParty = ({ isOpen, onClose, roomId, socket }) => {
     socket.emit('movie-update', { roomId, action: 'pause' });
   };
 
-  const handleSeek = (seconds) => {
-    if (isRemoteUpdate.current) return;
-    socket.emit('movie-update', { roomId, action: 'seek', currentTime: seconds });
+  const onSyncRequest = () => {
+    socket.emit('request-master-sync', { roomId });
   };
 
-  const isNative = shouldUseNative(url);
+  const handleSeek = (seconds) => {
+    if (isRemoteUpdate.current) return;
+    setCurrentTime(seconds);
+    socket.emit('movie-update', { roomId, action: 'seek', currentTime: seconds });
+  };
 
   if (!isOpen) return null;
 
@@ -88,10 +119,28 @@ const WatchParty = ({ isOpen, onClose, roomId, socket }) => {
           <div className="flex items-center gap-2">
             <MonitorPlay className="h-5 w-5 text-indigo-400" />
             <span className="text-sm font-bold text-slate-200 uppercase tracking-widest">Watch Party</span>
+            {socket.id === masterId && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-full">
+                <Crown className="h-3 w-3 text-amber-500" />
+                <span className="text-[10px] font-bold text-amber-500 uppercase">Master</span>
+              </div>
+            )}
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {url && socket.id !== masterId && (
+              <button 
+                onClick={onSyncRequest}
+                className="flex items-center gap-1.5 px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-indigo-400 border border-white/5 transition-all active:scale-95"
+                title="Sync with Master"
+              >
+                <RefreshCw className="h-3 w-3" />
+                SYNC
+              </button>
+            )}
+            <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* URL Input */}

@@ -40,6 +40,10 @@ const CanvasRoom = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [autoMode, setAutoMode] = useState(false);
   const [isWatchPartyOpen, setIsWatchPartyOpen] = useState(false);
+  const [movieUrl, setMovieUrl] = useState('');
+  const [moviePlaying, setMoviePlaying] = useState(false);
+  const [movieTime, setMovieTime] = useState(0);
+  const [movieMasterId, setMovieMasterId] = useState(null);
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
 
@@ -139,6 +143,27 @@ const CanvasRoom = () => {
         peer.signal(signal);
       }
     });
+    socket.on('movie-update-remote', (data) => {
+      if (data.action === 'url' || data.url) {
+        setMovieUrl(data.url);
+      }
+      if (data.action === 'play') setMoviePlaying(true);
+      if (data.action === 'pause') setMoviePlaying(false);
+      if (data.action === 'seek') setMovieTime(data.currentTime);
+      if (data.masterId) setMovieMasterId(data.masterId);
+      
+      // Handle initial load state from server
+      if (!data.action && data.url !== undefined) {
+        setMovieUrl(data.url);
+        setMoviePlaying(data.playing);
+        setMovieTime(data.currentTime);
+        setMovieMasterId(data.masterId);
+      }
+    });
+
+    socket.on('sync-to-master', ({ currentTime }) => {
+      setMovieTime(currentTime);
+    });
 
     return () => {
       socket.off('user-list-update');
@@ -147,6 +172,9 @@ const CanvasRoom = () => {
       socket.off('notification');
       socket.off('user-history-update');
       socket.off('webrtc-signal');
+      socket.off('movie-update-remote');
+      socket.off('sync-to-master');
+      socket.off('get-master-time');
     };
   }, [socket, roomId, userName, localStream, inCall]);
 
@@ -397,6 +425,13 @@ const CanvasRoom = () => {
         onClose={() => setIsWatchPartyOpen(false)}
         roomId={roomId}
         socket={socket}
+        url={movieUrl}
+        setUrl={setMovieUrl}
+        playing={moviePlaying}
+        setPlaying={setMoviePlaying}
+        currentTime={movieTime}
+        setCurrentTime={setMovieTime}
+        masterId={movieMasterId}
       />
 
       {/* Drawing Canvas */}

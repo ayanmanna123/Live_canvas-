@@ -61,7 +61,7 @@ io.on('connection', (socket) => {
     if (!rooms.has(roomId)) {
       rooms.set(roomId, { 
         users: new Map(),
-        movie: { url: '', playing: false, currentTime: 0 }
+        movie: { url: '', playing: false, currentTime: 0, masterId: null }
       });
     }
     rooms.get(roomId).users.set(socket.id, userName);
@@ -257,12 +257,33 @@ io.on('connection', (socket) => {
     
     // Update server-side state
     const room = rooms.get(roomId);
-    if (data.action === 'url') room.movie.url = data.url;
+    if (data.action === 'url') {
+      room.movie.url = data.url;
+      room.movie.masterId = socket.id; // Person who loads URL becomes Master
+    }
     if (data.action === 'play') room.movie.playing = true;
     if (data.action === 'pause') room.movie.playing = false;
     if (data.action === 'seek') room.movie.currentTime = data.currentTime;
     
-    socket.to(roomId).emit('movie-update-remote', data);
+    // Broadcast update including masterId
+    socket.to(roomId).emit('movie-update-remote', { ...data, masterId: room.movie.masterId });
+  });
+
+  socket.on('request-master-sync', (data) => {
+    const { roomId } = data;
+    if (!rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    if (room.movie.masterId) {
+      // Ask master for their current time
+      io.to(room.movie.masterId).emit('get-master-time', { requesterId: socket.id });
+    }
+  });
+
+  socket.on('master-time-response', (data) => {
+    const { requesterId, currentTime } = data;
+    if (requesterId) {
+      io.to(requesterId).emit('sync-to-master', { currentTime });
+    }
   });
 
   socket.on('get-user-history', async (roomId) => {
