@@ -4,6 +4,7 @@ import { useSocket } from '../contexts/SocketContext';
 import DrawingCanvas from '../components/DrawingCanvas';
 import Toolbar from '../components/Toolbar';
 import Chat from '../components/Chat';
+import UserHistoryPanel from '../components/UserHistory';
 import { Share2, Users as UsersIcon, LogOut } from 'lucide-react';
 
 const CanvasRoom = () => {
@@ -30,6 +31,8 @@ const CanvasRoom = () => {
   const [isUsersListOpen, setIsUsersListOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [showRopes, setShowRopes] = useState(true);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [userHistory, setUserHistory] = useState([]);
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -86,11 +89,16 @@ const CanvasRoom = () => {
       setTimeout(() => setNotification(null), 3000);
     });
 
+    socket.on('user-history-update', (history) => {
+      setUserHistory(history);
+    });
+
     return () => {
       socket.off('user-list-update');
       socket.off('cursor-move-remote');
       socket.off('background-changed');
       socket.off('notification');
+      socket.off('user-history-update');
     };
   }, [socket, roomId, userName]);
 
@@ -157,6 +165,11 @@ const CanvasRoom = () => {
         onRedo={() => canvasRef.current?.redo()}
         showRopes={showRopes}
         setShowRopes={setShowRopes}
+        onToggleHistory={() => {
+          setIsHistoryOpen(!isHistoryOpen);
+          if (isHistoryOpen) setIsChatOpen(false);
+        }}
+        isHistoryOpen={isHistoryOpen}
       />
 
       {/* Sidebar - Users List & Leave Button */}
@@ -211,6 +224,12 @@ const CanvasRoom = () => {
         userName={userName}
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
+      />
+
+      <UserHistoryPanel 
+        history={userHistory}
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
       />
 
       {/* Drawing Canvas */}

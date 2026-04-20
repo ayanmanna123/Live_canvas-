@@ -6,6 +6,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import Message from './models/Message.js';
 import Stroke from './models/Stroke.js';
+import UserHistory from './models/UserHistory.js';
 
 dotenv.config();
 
@@ -60,15 +61,27 @@ io.on('connection', (socket) => {
     }
     rooms.get(roomId).set(socket.id, userName);
 
-    // Send existing strokes and chat history to the new user (only if DB is connected)
+    // Send existing strokes, chat history, and user history to the new user (only if DB is connected)
     if (mongoose.connection.readyState === 1) {
       try {
-        const [strokes, messages] = await Promise.all([
+        const [strokes, messages, history] = await Promise.all([
           Stroke.find({ roomId }).sort({ createdAt: 1 }),
-          Message.find({ roomId }).sort({ createdAt: 1 }).limit(100)
+          Message.find({ roomId }).sort({ createdAt: 1 }).limit(100),
+          UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50)
         ]);
+        
+        // Record this join event
+        const newHistoryEntry = new UserHistory({
+          roomId,
+          userId: socket.id,
+          userName,
+          joinedAt: new Date()
+        });
+        await newHistoryEntry.save();
+
         socket.emit('canvas-history', strokes);
         socket.emit('chat-history', messages);
+        io.to(roomId).emit('user-history-update', await UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50));
       } catch (error) {
         console.error('Error fetching room history:', error);
       }
@@ -178,9 +191,21 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('background-changed', color);
   });
 
+  socket.on('get-user-history', async (roomId) => {
+    if (!roomId) return;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const history = await UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50);
+        socket.emit('user-history-update', history);
+      } catch (error) {
+        console.error('Error fetching user history:', error);
+      }
+    }
+  });
+
   socket.on('disconnecting', () => {
     // rooms is Map<roomId, Map<socketId, userName>>
-    socket.rooms.forEach(roomId => {
+    socket.rooms.forEach(async (roomId) => {
       if (rooms.has(roomId)) {
         const roomUsers = rooms.get(roomId);
         const userName = roomUsers.get(socket.id);
@@ -189,6 +214,20 @@ io.on('connection', (socket) => {
           roomUsers.delete(socket.id);
           console.log(`${userName} left room: ${roomId}`);
           
+          // Update UserHistory
+          if (mongoose.connection.readyState === 1) {
+            try {
+              await UserHistory.findOneAndUpdate(
+                { userId: socket.id, roomId, leftAt: null },
+                { leftAt: new Date() },
+                { sort: { joinedAt: -1 } }
+              );
+              io.to(roomId).emit('user-history-update', await UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50));
+            } catch (err) {
+              console.error('Error updating user history on disconnect:', err);
+            }
+          }
+
           const usersInRoom = Array.from(roomUsers.entries()).map(([id, name]) => ({ id, name }));
           io.to(roomId).emit('user-list-update', usersInRoom);
           socket.to(roomId).emit('notification', { message: `${userName} left the room` });

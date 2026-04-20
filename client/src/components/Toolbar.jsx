@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -16,7 +16,9 @@ const Toolbar = ({
   onUndo,
   onRedo,
   showRopes,
-  setShowRopes
+  setShowRopes,
+  onToggleHistory,
+  isHistoryOpen
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   
@@ -143,6 +145,15 @@ const Toolbar = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant={isHistoryOpen ? "tonal" : "ghost"}
+                size="icon"
+                onClick={onToggleHistory}
+                title="Activity History"
+              >
+                <History className="size-5" />
+              </Button>
+
               <Button
                 variant={showRopes ? "tonal" : "ghost"}
                 size="icon"
