@@ -59,9 +59,12 @@ io.on('connection', (socket) => {
 
     // Track user in room
     if (!rooms.has(roomId)) {
-      rooms.set(roomId, new Map());
+      rooms.set(roomId, { 
+        users: new Map(),
+        movie: { url: '', playing: false, currentTime: 0 }
+      });
     }
-    rooms.get(roomId).set(socket.id, userName);
+    rooms.get(roomId).users.set(socket.id, userName);
 
     // Send existing strokes, chat history, and user history to the new user (only if DB is connected)
     if (mongoose.connection.readyState === 1) {
@@ -83,6 +86,7 @@ io.on('connection', (socket) => {
 
         socket.emit('canvas-history', strokes);
         socket.emit('chat-history', messages);
+        socket.emit('movie-update-remote', rooms.get(roomId).movie);
         io.to(roomId).emit('user-history-update', await UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50));
       } catch (error) {
         console.error('Error fetching room history:', error);
@@ -92,7 +96,7 @@ io.on('connection', (socket) => {
     // Notify others
     const room = rooms.get(roomId);
     if (room) {
-      const usersInRoom = Array.from(room.entries()).map(([id, name]) => ({ id, name }));
+      const usersInRoom = Array.from(room.users.entries()).map(([id, name]) => ({ id, name }));
       io.to(roomId).emit('user-list-update', usersInRoom);
       socket.to(roomId).emit('notification', { message: `${userName} joined the room` });
     }
@@ -249,7 +253,15 @@ io.on('connection', (socket) => {
   socket.on('movie-update', (data) => {
     // data: { roomId, url, playing, currentTime, action: 'play'|'pause'|'seek'|'url' }
     const { roomId } = data;
-    if (!roomId) return;
+    if (!roomId || !rooms.has(roomId)) return;
+    
+    // Update server-side state
+    const room = rooms.get(roomId);
+    if (data.action === 'url') room.movie.url = data.url;
+    if (data.action === 'play') room.movie.playing = true;
+    if (data.action === 'pause') room.movie.playing = false;
+    if (data.action === 'seek') room.movie.currentTime = data.currentTime;
+    
     socket.to(roomId).emit('movie-update-remote', data);
   });
 
@@ -269,11 +281,11 @@ io.on('connection', (socket) => {
     // rooms is Map<roomId, Map<socketId, userName>>
     socket.rooms.forEach(async (roomId) => {
       if (rooms.has(roomId)) {
-        const roomUsers = rooms.get(roomId);
-        const userName = roomUsers.get(socket.id);
+        const room = rooms.get(roomId);
+        const userName = room.users.get(socket.id);
         
         if (userName) {
-          roomUsers.delete(socket.id);
+          room.users.delete(socket.id);
           console.log(`${userName} left room: ${roomId}`);
           
           // Update UserHistory
@@ -289,13 +301,13 @@ io.on('connection', (socket) => {
               console.error('Error updating user history on disconnect:', err);
             }
           }
-
-          const usersInRoom = Array.from(roomUsers.entries()).map(([id, name]) => ({ id, name }));
+ 
+          const usersInRoom = Array.from(room.users.entries()).map(([id, name]) => ({ id, name }));
           io.to(roomId).emit('user-list-update', usersInRoom);
           socket.to(roomId).emit('notification', { message: `${userName} left the room` });
           
           // Clean up empty rooms
-          if (roomUsers.size === 0) {
+          if (room.users.size === 0) {
             rooms.delete(roomId);
           }
         }
