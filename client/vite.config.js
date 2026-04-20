@@ -8,10 +8,18 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      events: 'events',
+      util: 'util',
+      process: 'process/browser',
+      buffer: 'buffer',
     },
   },
   server: {
     open: true,
     port: 5173,
+  },
+  define: {
+    global: 'window',
+    'process.env': {},
   },
 })

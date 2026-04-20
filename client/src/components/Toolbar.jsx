@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Download, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -18,7 +18,9 @@ const Toolbar = ({
   showRopes,
   setShowRopes,
   onToggleHistory,
-  isHistoryOpen
+  isHistoryOpen,
+  inCall,
+  onToggleCall
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   
@@ -152,6 +154,16 @@ const Toolbar = ({
                 title="Activity History"
               >
                 <History className="size-5" />
+              </Button>
+
+              <Button
+                variant={inCall ? "tonal" : "ghost"}
+                size="icon"
+                onClick={onToggleCall}
+                className={inCall ? "text-md-primary" : "text-md-on-surface-variant"}
+                title={inCall ? "Leave Call" : "Join Video Call"}
+              >
+                <Video className="size-5" />
               </Button>
 
               <Button

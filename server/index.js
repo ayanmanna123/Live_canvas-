@@ -217,6 +217,14 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('webrtc-signal', (data) => {
+    // data: { to, from, signal }
+    io.to(data.to).emit('webrtc-signal', {
+      from: socket.id,
+      signal: data.signal
+    });
+  });
+
   socket.on('cursor-move', ({ roomId, userName, position }) => {
     if (!roomId) return;
     socket.to(roomId).emit('cursor-move-remote', {

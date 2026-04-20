@@ -5,8 +5,10 @@ import DrawingCanvas from '../components/DrawingCanvas';
 import Toolbar from '../components/Toolbar';
 import Chat from '../components/Chat';
 import UserHistoryPanel from '../components/UserHistory';
-import { Share2, Users as UsersIcon, LogOut, Bell, BellOff } from 'lucide-react';
+import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import Peer from 'simple-peer';
+import VideoCall from '../components/VideoCall';
 
 const CanvasRoom = () => {
   const { roomId } = useParams();
@@ -36,6 +38,14 @@ const CanvasRoom = () => {
   const [userHistory, setUserHistory] = useState([]);
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
+
+  // Video Call State
+  const [inCall, setInCall] = useState(false);
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStreams, setRemoteStreams] = useState({}); // { socketId: { stream, userName } }
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(false);
+  const peersRef = useRef({}); // { socketId: PeerInstance }
 
   const { permission, requestPermission } = usePushNotifications(socket, roomId, socket?.id, userName);
 
@@ -114,14 +124,114 @@ const CanvasRoom = () => {
       setUserHistory(history);
     });
 
+    socket.on('webrtc-signal', (data) => {
+      const { from, signal } = data;
+      if (peersRef.current[from]) {
+        peersRef.current[from].signal(signal);
+      } else if (localStream && inCall) {
+        // Someone is calling us
+        const peer = createPeer(from, socket.id, localStream, false);
+        peersRef.current[from] = peer;
+        peer.signal(signal);
+      }
+    });
+
     return () => {
       socket.off('user-list-update');
       socket.off('cursor-move-remote');
       socket.off('background-changed');
       socket.off('notification');
       socket.off('user-history-update');
+      socket.off('webrtc-signal');
     };
-  }, [socket, roomId, userName]);
+  }, [socket, roomId, userName, localStream, inCall]);
+
+  const createPeer = (userToSignal, callerId, stream, initiator) => {
+    const peer = new Peer({
+      initiator,
+      trickle: false,
+      stream,
+    });
+
+    peer.on('signal', (signal) => {
+      socket.emit('webrtc-signal', {
+        to: userToSignal,
+        from: callerId,
+        signal
+      });
+    });
+
+    peer.on('stream', (remoteStream) => {
+      const user = users.find(u => u.id === userToSignal);
+      setRemoteStreams(prev => ({
+        ...prev,
+        [userToSignal]: { 
+          stream: remoteStream, 
+          userName: user ? user.name : 'Unknown User' 
+        }
+      }));
+    });
+
+    peer.on('close', () => {
+      setRemoteStreams(prev => {
+        const copy = { ...prev };
+        delete copy[userToSignal];
+        return copy;
+      });
+    });
+
+    return peer;
+  };
+
+  const handleJoinCall = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setLocalStream(stream);
+      setInCall(true);
+
+      // Initiate calls to everyone else in the room
+      const newPeers = {};
+      users.forEach((user) => {
+        if (user.id !== socket.id) {
+          const peer = createPeer(user.id, socket.id, stream, true);
+          newPeers[user.id] = peer;
+        }
+      });
+      peersRef.current = newPeers;
+    } catch (err) {
+      console.error('Failed to get local stream', err);
+      setNotification('Could not access camera/microphone');
+    }
+  };
+
+  const handleEndCall = () => {
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+    }
+    Object.values(peersRef.current).forEach(peer => peer.destroy());
+    peersRef.current = {};
+    setLocalStream(null);
+    setRemoteStreams({});
+    setInCall(false);
+  };
+
+  const toggleAudio = () => {
+    if (localStream) {
+      localStream.getAudioTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsAudioMuted(!isAudioMuted);
+    }
+  };
+
+  const toggleVideo = () => {
+    if (localStream) {
+      localStream.getVideoTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsVideoMuted(!isVideoMuted);
+    }
+  };
 
   const handleClearCanvas = () => {
     if (window.confirm('Are you sure you want to clear the entire canvas?')) {
@@ -197,7 +307,21 @@ const CanvasRoom = () => {
           if (isHistoryOpen) setIsChatOpen(false);
         }}
         isHistoryOpen={isHistoryOpen}
+        inCall={inCall}
+        onToggleCall={inCall ? handleEndCall : handleJoinCall}
       />
+      
+      {inCall && localStream && (
+        <VideoCall 
+          localStream={localStream}
+          remoteStreams={remoteStreams}
+          onEndCall={handleEndCall}
+          toggleAudio={toggleAudio}
+          toggleVideo={toggleVideo}
+          isAudioMuted={isAudioMuted}
+          isVideoMuted={isVideoMuted}
+        />
+      )}
 
       {/* Sidebar - Users List & Leave Button */}
       <div className="absolute top-4 sm:top-24 left-4 sm:left-6 z-40 flex flex-col gap-3 pointer-events-none">

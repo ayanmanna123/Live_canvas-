@@ -341,11 +341,13 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
     const offsetY = e.clientY - rect.top;
 
     // Broadcast cursor position in world space
-    socket.emit('cursor-move', {
-      roomId,
-      userName,
-      position: { x: offsetX - panOffset.x, y: offsetY - panOffset.y }
-    });
+    if (socket) {
+      socket.emit('cursor-move', {
+        roomId,
+        userName,
+        position: { x: offsetX - panOffset.x, y: offsetY - panOffset.y }
+      });
+    }
 
     if (isPanning) {
       const dx = offsetX - lastPanPos.x;
