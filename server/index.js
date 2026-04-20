@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import Message from './models/Message.js';
 import Stroke from './models/Stroke.js';
 import UserHistory from './models/UserHistory.js';
+import PushSubscription from './models/PushSubscription.js';
+import { sendPushNotification } from './utils/pushNotification.js';
 
 dotenv.config();
 
@@ -171,9 +173,47 @@ io.on('connection', (socket) => {
       try {
         const newMessage = new Message(messageData);
         await newMessage.save();
+
+        // Send push notifications to others in the room
+        const subscriptions = await PushSubscription.find({ 
+          roomId, 
+          userId: { $ne: socket.id } 
+        });
+
+        const pushPayload = {
+          title: `New Message: ${roomId}`,
+          body: `${userName}: ${text}`,
+          data: { roomId, type: 'chat' },
+          icon: '/favicon.svg'
+        };
+
+        subscriptions.forEach(async (sub) => {
+          const result = await sendPushNotification(sub.subscription, pushPayload);
+          if (result.error === 'GONE') {
+            await PushSubscription.deleteOne({ _id: sub._id });
+          }
+        });
       } catch (error) {
-        console.error('Error saving message:', error);
+        console.error('Error saving message or sending push:', error);
       }
+    }
+  });
+
+  socket.on('subscribe-push', async (data) => {
+    const { roomId, userId, userName, subscription } = data;
+    if (!roomId || !userId || !subscription) return;
+
+    try {
+      if (mongoose.connection.readyState === 1) {
+        await PushSubscription.findOneAndUpdate(
+          { roomId, userId },
+          { roomId, userId, userName, subscription },
+          { upsert: true, new: true }
+        );
+        console.log(`Push subscription saved for ${userName} in ${roomId}`);
+      }
+    } catch (error) {
+      console.error('Error saving push subscription:', error);
     }
   });
 

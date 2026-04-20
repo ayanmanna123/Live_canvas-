@@ -12,7 +12,7 @@ const Toolbar = ({
   onShare,
   onToggleChat,
   isChatOpen,
-  hasUnread,
+  unreadCount,
   onUndo,
   onRedo,
   showRopes,
@@ -172,8 +172,10 @@ const Toolbar = ({
                 title="Chat"
               >
                 <MessageSquare className="size-5" />
-                {hasUnread && !isChatOpen && (
-                  <span className="absolute top-1 right-1 h-3 w-3 rounded-full bg-md-tertiary border-2 border-md-surface-container animate-pulse" />
+                {unreadCount > 0 && !isChatOpen && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-md-tertiary text-[10px] font-bold text-md-on-tertiary border-2 border-md-surface-container animate-in zoom-in duration-200">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
                 )}
               </Button>
               

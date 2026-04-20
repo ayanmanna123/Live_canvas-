@@ -5,7 +5,8 @@ import DrawingCanvas from '../components/DrawingCanvas';
 import Toolbar from '../components/Toolbar';
 import Chat from '../components/Chat';
 import UserHistoryPanel from '../components/UserHistory';
-import { Share2, Users as UsersIcon, LogOut } from 'lucide-react';
+import { Share2, Users as UsersIcon, LogOut, Bell, BellOff } from 'lucide-react';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const CanvasRoom = () => {
   const { roomId } = useParams();
@@ -29,11 +30,14 @@ const CanvasRoom = () => {
   const [notification, setNotification] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isUsersListOpen, setIsUsersListOpen] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [showRopes, setShowRopes] = useState(true);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [userHistory, setUserHistory] = useState([]);
   const canvasRef = useRef(null);
+  const notificationAudio = useRef(new Audio('/notification.mp3'));
+
+  const { permission, requestPermission } = usePushNotifications(socket, roomId, socket?.id, userName);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -67,9 +71,26 @@ const CanvasRoom = () => {
       setUsers(userList);
     });
 
-    socket.on('receive-message', () => {
-      if (!isChatOpen) {
-        setHasUnread(true);
+    socket.on('receive-message', (msg) => {
+      const isVisible = document.visibilityState === 'visible';
+      
+      if (!isChatOpen || !isVisible) {
+        setUnreadCount(prev => prev + 1);
+        setNotification(`New message from ${msg.userName}`);
+        setTimeout(() => setNotification(null), 3000);
+
+        // Native device notification
+        if (Notification.permission === 'granted') {
+          new Notification('New Message', {
+            body: `${msg.userName}: ${msg.text}`,
+            icon: '/favicon.svg',
+            tag: 'chat-notification',
+            renotify: true
+          });
+        }
+
+        // Play notification sound
+        notificationAudio.current.play().catch(e => console.log('Audio play failed:', e));
       }
     });
 
@@ -157,10 +178,16 @@ const CanvasRoom = () => {
         userCount={users.length}
         onToggleChat={() => {
           setIsChatOpen(!isChatOpen);
-          if (!isChatOpen) setHasUnread(false);
+          if (!isChatOpen) {
+            setUnreadCount(0);
+            // Request push notification permission
+            if (permission === 'default') {
+              requestPermission();
+            }
+          }
         }}
         isChatOpen={isChatOpen}
-        hasUnread={hasUnread}
+        unreadCount={unreadCount}
         onUndo={() => canvasRef.current?.undo()}
         onRedo={() => canvasRef.current?.redo()}
         showRopes={showRopes}

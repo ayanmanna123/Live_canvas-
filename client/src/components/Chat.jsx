@@ -4,7 +4,7 @@ import { Send, X, MessageSquare } from 'lucide-react';
 const Chat = ({ socket, roomId, userName, isOpen, onClose }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -24,9 +24,7 @@ const Chat = ({ socket, roomId, userName, isOpen, onClose }) => {
 
     socket.on('receive-message', (newMessage) => {
       setMessages((prev) => [...prev, newMessage]);
-      if (!isOpen) {
-        setUnreadCount((prev) => prev + 1);
-      }
+      // Unread count is now managed by CanvasRoom
     });
 
     return () => {
@@ -35,11 +33,7 @@ const Chat = ({ socket, roomId, userName, isOpen, onClose }) => {
     };
   }, [socket, isOpen]);
 
-  useEffect(() => {
-    if (isOpen) {
-      setUnreadCount(0);
-    }
-  }, [isOpen]);
+
 
   const handleSendMessage = (e) => {
     e.preventDefault();
