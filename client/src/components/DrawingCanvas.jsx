@@ -77,7 +77,7 @@ const canvasReducer = (state, action) => {
   }
 };
 
-const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, showRopes }, ref) => {
+const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, showRopes, autoMode }, ref) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -281,7 +281,116 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
     
     ctx.restore();
   }, [strokes, panOffset]);
+  
+  // Shape Recognition Logic
+  const getSqDist = (p1, p2) => (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
+  const getSqSegDist = (p, p1, p2) => {
+    let x = p1.x, y = p1.y, dx = p2.x - x, dy = p2.y - y;
+    if (dx !== 0 || dy !== 0) {
+      let t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
+      if (t > 1) { x = p2.x; y = p2.y; }
+      else if (t > 0) { x += dx * t; y += dy * t; }
+    }
+    dx = p.x - x; dy = p.y - y;
+    return dx * dx + dy * dy;
+  };
 
+  const simplifyStep = (points, first, last, sqTolerance, simplified) => {
+    let maxSqDist = sqTolerance, index;
+    for (let i = first + 1; i < last; i++) {
+      let sqDist = getSqSegDist(points[i], points[first], points[last]);
+      if (sqDist > maxSqDist) {
+        index = i;
+        maxSqDist = sqDist;
+      }
+    }
+    if (maxSqDist > sqTolerance) {
+      if (index - first > 1) simplifyStep(points, first, index, sqTolerance, simplified);
+      simplified.push(points[index]);
+      if (last - index > 1) simplifyStep(points, index, last, sqTolerance, simplified);
+    }
+  };
+
+  const simplifyPath = (points, tolerance) => {
+    if (points.length <= 2) return points;
+    let sqTolerance = tolerance * tolerance;
+    let simplified = [points[0]];
+    simplifyStep(points, 0, points.length - 1, sqTolerance, simplified);
+    simplified.push(points[points.length - 1]);
+    return simplified;
+  };
+
+  const recognizeShape = (points) => {
+    if (points.length < 5) return points;
+
+    // Calculate metrics
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let totalLength = 0;
+    points.forEach((p, i) => {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+      if (i > 0) totalLength += Math.sqrt(getSqDist(p, points[i - 1]));
+    });
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+    const center = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+    const startEndDist = Math.sqrt(getSqDist(points[0], points[points.length - 1]));
+    const isClosed = startEndDist < Math.max(40, totalLength * 0.25);
+
+    // 1. Straight Line
+    if (!isClosed && totalLength < startEndDist * 1.3) {
+      return [points[0], points[points.length - 1]];
+    }
+
+    // 2. Circle / Ellipse
+    if (isClosed) {
+      // Area using shoelace
+      let area = 0;
+      for (let i = 0; i < points.length - 1; i++) {
+        area += (points[i].x * points[i + 1].y) - (points[i + 1].x * points[i].y);
+      }
+      area = Math.abs(area) / 2;
+      const circularity = (4 * Math.PI * area) / (totalLength ** 2);
+
+      if (circularity > 0.7) {
+        const numPoints = 40;
+        const pts = [];
+        for (let i = 0; i <= numPoints; i++) {
+          const angle = (i / numPoints) * Math.PI * 2;
+          pts.push({
+            x: center.x + (width / 2) * Math.cos(angle),
+            y: center.y + (height / 2) * Math.sin(angle)
+          });
+        }
+        return pts;
+      }
+
+      // 3. Polygons (Triangle / Rectangle)
+      const simplified = simplifyPath(points, 25);
+      
+      // Filter out points too close to each other
+      const filtered = simplified.filter((p, i) => i === 0 || Math.sqrt(getSqDist(p, simplified[i-1])) > 20);
+
+      if (filtered.length === 4) { // 3 vertices + closing
+        return [...filtered, filtered[0]];
+      } else if (filtered.length === 5) { // 4 vertices + closing
+        // Snap to perfect rectangle if it's close enough
+        return [
+          { x: minX, y: minY },
+          { x: maxX, y: minY },
+          { x: maxX, y: maxY },
+          { x: minX, y: maxY },
+          { x: minX, y: minY }
+        ];
+      }
+    }
+
+    return points;
+  };
+ 
   useEffect(() => {
     redrawCanvas();
   }, [redrawCanvas]);
@@ -492,7 +601,16 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
     if (tool === 'eraser' || tool === 'text') return;
 
     if (currentStroke.current && currentStroke.current.points.length >= 2) {
-      const finalStroke = { ...currentStroke.current };
+      let finalPoints = currentStroke.current.points;
+      
+      if (autoMode && currentStroke.current.type === 'freehand') {
+        finalPoints = recognizeShape(finalPoints);
+      }
+
+      const finalStroke = { 
+        ...currentStroke.current,
+        points: finalPoints
+      };
       dispatch({ type: 'ADD_STROKE', stroke: finalStroke });
       socket.emit('draw', { roomId, stroke: finalStroke });
     }

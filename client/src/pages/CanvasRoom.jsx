@@ -37,6 +37,7 @@ const CanvasRoom = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [userHistory, setUserHistory] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [autoMode, setAutoMode] = useState(false);
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
 
@@ -311,6 +312,8 @@ const CanvasRoom = () => {
         isHistoryOpen={isHistoryOpen}
         inCall={inCall}
         onToggleCall={inCall ? handleEndCall : handleJoinCall}
+        autoMode={autoMode}
+        setAutoMode={setAutoMode}
       />
       
       {inCall && localStream && (
@@ -396,6 +399,7 @@ const CanvasRoom = () => {
         tool={tool}
         onPan={setPanOffset}
         showRopes={showRopes}
+        autoMode={autoMode}
       />
 
       {/* Remote Cursors Presence Layer */}

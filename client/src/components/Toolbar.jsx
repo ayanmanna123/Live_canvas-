@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -20,7 +20,9 @@ const Toolbar = ({
   onToggleHistory,
   isHistoryOpen,
   inCall,
-  onToggleCall
+  onToggleCall,
+  autoMode,
+  setAutoMode
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   
@@ -174,6 +176,16 @@ const Toolbar = ({
                 title={showRopes ? "Hide Ropes" : "Show Ropes"}
               >
                 <Spline className="size-5" />
+              </Button>
+
+              <Button
+                variant={autoMode ? "tonal" : "ghost"}
+                size="icon"
+                onClick={() => setAutoMode(!autoMode)}
+                className={autoMode ? "text-md-primary" : "text-md-on-surface-variant"}
+                title={autoMode ? "Auto Mode: OFF" : "Auto Mode: ON"}
+              >
+                <Wand2 className={`size-5 ${autoMode ? 'animate-pulse' : ''}`} />
               </Button>
 
               <Button
