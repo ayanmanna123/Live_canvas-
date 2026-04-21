@@ -8,6 +8,7 @@ import Message from './models/Message.js';
 import Stroke from './models/Stroke.js';
 import UserHistory from './models/UserHistory.js';
 import PushSubscription from './models/PushSubscription.js';
+import GameScore from './models/GameScore.js';
 import { sendPushNotification } from './utils/pushNotification.js';
 
 dotenv.config();
@@ -325,6 +326,79 @@ io.on('connection', (socket) => {
   socket.on('game-reset', ({ roomId, to }) => {
     if (!roomId || !to) return;
     io.to(to.id).emit('receive-game-reset');
+  });
+
+  socket.on('get-game-score', async ({ gameId, player1, player2 }) => {
+    if (!gameId || !player1 || !player2) return;
+    
+    // Always sort players alphabetically to find the correct record
+    const players = [player1, player2].sort();
+    
+    try {
+      if (mongoose.connection.readyState === 1) {
+        let score = await GameScore.findOne({ 
+          gameId, 
+          player1: players[0], 
+          player2: players[1] 
+        });
+        
+        if (!score) {
+          score = new GameScore({ 
+            gameId, 
+            player1: players[0], 
+            player2: players[1] 
+          });
+          await score.save();
+        }
+        socket.emit('receive-game-score', score);
+      }
+    } catch (error) {
+      console.error('Error handling get-game-score:', error);
+    }
+  });
+
+  socket.on('update-game-score', async ({ roomId, gameId, player1, player2, winner }) => {
+    if (!gameId || !player1 || !player2) return;
+    
+    const players = [player1, player2].sort();
+    
+    try {
+      if (mongoose.connection.readyState === 1) {
+        let score = await GameScore.findOne({ 
+          gameId, 
+          player1: players[0], 
+          player2: players[1] 
+        });
+        
+        if (!score) {
+          score = new GameScore({ 
+            gameId, 
+            player1: players[0], 
+            player2: players[1] 
+          });
+        }
+        
+        if (winner === 'Draw') {
+          score.draws += 1;
+        } else if (winner === players[0]) {
+          score.score1 += 1;
+        } else if (winner === players[1]) {
+          score.score2 += 1;
+        }
+        
+        score.lastPlayed = new Date();
+        await score.save();
+        
+        // Broadcast to both players in the room (or just the two players)
+        if (roomId) {
+          io.to(roomId).emit('receive-game-score', score);
+        } else {
+          socket.emit('receive-game-score', score);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating game score:', error);
+    }
   });
 
   socket.on('get-user-history', async (roomId) => {

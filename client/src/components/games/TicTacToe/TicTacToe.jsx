@@ -12,7 +12,8 @@ const TicTacToe = () => {
   const [isXNext, setIsXNext] = useState(true);
   const [winner, setWinner] = useState(null);
   const [winLine, setWinLine] = useState(null);
-  const [scores, setScores] = useState({ x: 0, o: 0 });
+  const [scores, setScores] = useState({ x: 0, o: 0 }); // Current session scores
+  const [totalScores, setTotalScores] = useState({ p1: 0, p2: 0, draws: 0 }); // Historical scores
   const [round, setRound] = useState(1);
 
   // My role: Inviter is 'X', Invitee is 'O'
@@ -20,7 +21,27 @@ const TicTacToe = () => {
   const isMyTurn = (isXNext && mySymbol === 'X') || (!isXNext && mySymbol === 'O');
 
   useEffect(() => {
-    if (socket && isConnected) {
+    if (socket && isConnected && opponent) {
+      // Fetch historical scores
+      socket.emit('get-game-score', { 
+        gameId: 'tictactoe', 
+        player1: userName, 
+        player2: opponent.name 
+      });
+
+      socket.on('receive-game-score', (scoreData) => {
+        // Map scores to the UI slots (p1 = Left Card, p2 = Right Card)
+        const sortedPlayers = [userName, opponent.name].sort();
+        const leftPlayerName = isInviter ? userName : opponent.name;
+        
+        // If the player on the left card is the first one in the sorted database list...
+        if (leftPlayerName === sortedPlayers[0]) {
+          setTotalScores({ p1: scoreData.score1, p2: scoreData.score2, draws: scoreData.draws });
+        } else {
+          setTotalScores({ p1: scoreData.score2, p2: scoreData.score1, draws: scoreData.draws });
+        }
+      });
+
       socket.on('receive-game-move', (moveIndex) => {
         handleMove(moveIndex, false);
       });
@@ -30,11 +51,12 @@ const TicTacToe = () => {
       });
 
       return () => {
+        socket.off('receive-game-score');
         socket.off('receive-game-move');
         socket.off('receive-game-reset');
       };
     }
-  }, [socket, isConnected, board, isXNext, winner]);
+  }, [socket, isConnected, board, isXNext, winner, opponent, userName]);
 
   const calculateWinner = (squares) => {
     const lines = [
@@ -67,12 +89,36 @@ const TicTacToe = () => {
     if (winInfo) {
       setWinner(winInfo.winner);
       setWinLine(winInfo.line);
+      
+      // Update session scores
+      const winSymbol = winInfo.winner.toLowerCase();
       setScores(prev => ({
         ...prev,
-        [winInfo.winner.toLowerCase()]: prev[winInfo.winner.toLowerCase()] + 1
+        [winSymbol]: prev[winSymbol] + 1
       }));
+
+      // Update persistent scores on server if I am the one who won (or if I'm the inviter to avoid double update)
+      // Actually, updating when local move results in win is sufficient.
+      if (isLocal && socket) {
+        socket.emit('update-game-score', {
+          roomId,
+          gameId: 'tictactoe',
+          player1: userName,
+          player2: opponent.name,
+          winner: winInfo.winner === mySymbol ? userName : opponent.name
+        });
+      }
     } else if (!newBoard.includes(null)) {
       setWinner('Draw');
+      if (isLocal && socket) {
+        socket.emit('update-game-score', {
+          roomId,
+          gameId: 'tictactoe',
+          player1: userName,
+          player2: opponent.name,
+          winner: 'Draw'
+        });
+      }
     } else {
       setIsXNext(!isXNext);
     }
@@ -111,6 +157,26 @@ const TicTacToe = () => {
           </div>
         </div>
 
+        {/* Historical Stats Bar */}
+        <div className="px-8 mt-2">
+            <div className="bg-slate-800/40 rounded-xl py-2 px-6 flex justify-between items-center border border-white/5">
+                <div className="text-center">
+                    <p className="text-[10px] uppercase font-bold text-slate-400">Total Wins</p>
+                    <p className="text-lg font-black text-white">{totalScores.p1}</p>
+                </div>
+                <div className="h-6 w-[1px] bg-white/10" />
+                <div className="text-center">
+                    <p className="text-[10px] uppercase font-bold text-slate-400">Draws</p>
+                    <p className="text-lg font-black text-slate-400">{totalScores.draws}</p>
+                </div>
+                <div className="h-6 w-[1px] bg-white/10" />
+                <div className="text-center">
+                    <p className="text-[10px] uppercase font-bold text-slate-400">Total Wins</p>
+                    <p className="text-lg font-black text-white">{totalScores.p2}</p>
+                </div>
+            </div>
+        </div>
+
         <div className="ttt-main-content">
           {/* Player Left: Always 'X' (Inviter) */}
           <div className={`ttt-player-card ${isXNext && !winner ? 'active' : ''}`}>
@@ -122,7 +188,7 @@ const TicTacToe = () => {
               <span className="ttt-icon-x">X</span>
             </div>
             <div className="ttt-win-rounds">
-              Win Rounds: {scores.x}
+              Session: {scores.x}
             </div>
           </div>
 
@@ -154,7 +220,7 @@ const TicTacToe = () => {
               <span className="ttt-icon-o">O</span>
             </div>
             <div className="ttt-win-rounds">
-              Win Rounds: {scores.o}
+              Session: {scores.o}
             </div>
           </div>
         </div>
