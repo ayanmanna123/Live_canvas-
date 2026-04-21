@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film, Gamepad2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -24,7 +24,8 @@ const Toolbar = ({
   autoMode,
   setAutoMode,
   onToggleWatchParty,
-  isWatchPartyOpen
+  isWatchPartyOpen,
+  onOpenGames
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   
@@ -176,6 +177,10 @@ const Toolbar = ({
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
+            </Button>
+
+            <Button variant="ghost" size="icon" onClick={onOpenGames} title="All Games" className="rounded-full text-md-on-surface-variant hover:text-md-primary">
+              <Gamepad2 className="size-5" />
             </Button>
             
             <Button variant="ghost" size="icon" onClick={onClear} className="text-md-on-surface-variant hover:bg-red-500/10 hover:text-red-500 rounded-full" title="Clear Canvas">

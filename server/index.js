@@ -306,6 +306,27 @@ io.on('connection', (socket) => {
     }
   });
 
+  // --- Game Events ---
+  socket.on('game-invite', ({ roomId, from, to, gameId }) => {
+    if (!roomId || !to) return;
+    io.to(to.id).emit('receive-game-invite', { from, gameId, roomId });
+  });
+
+  socket.on('game-invite-response', ({ roomId, from, to, accepted, gameId }) => {
+    if (!roomId || !to) return;
+    io.to(to.id).emit('game-invite-result', { from, accepted, gameId });
+  });
+
+  socket.on('game-move', ({ roomId, to, move }) => {
+    if (!roomId || !to) return;
+    io.to(to.id).emit('receive-game-move', move);
+  });
+
+  socket.on('game-reset', ({ roomId, to }) => {
+    if (!roomId || !to) return;
+    io.to(to.id).emit('receive-game-reset');
+  });
+
   socket.on('get-user-history', async (roomId) => {
     if (!roomId) return;
     if (mongoose.connection.readyState === 1) {

@@ -422,6 +422,7 @@ const CanvasRoom = () => {
         setAutoMode={setAutoMode}
         onToggleWatchParty={() => setIsWatchPartyOpen(!isWatchPartyOpen)}
         isWatchPartyOpen={isWatchPartyOpen}
+        onOpenGames={() => navigate('/games', { state: { roomId, userName } })}
       />
       
       {inCall && localStream && (
