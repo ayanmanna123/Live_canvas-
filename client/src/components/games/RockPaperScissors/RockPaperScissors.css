@@ -1,0 +1,202 @@
+.rps-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+    width: 100%;
+}
+
+.rps-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 40px;
+    width: 100%;
+    max-width: 850px;
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+    color: #1a1c1e;
+    margin: 20px;
+}
+
+.dark .rps-card {
+    background: #1a1c1e;
+    color: #e2e2e6;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rps-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.rps-title {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -2px;
+}
+
+.rps-gamearea {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+    margin-top: 20px;
+    min-height: 280px;
+}
+
+.rps-player-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    text-align: center;
+}
+
+.rps-hand-container {
+    width: 140px;
+    height: 140px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rps-hand-preview {
+    font-size: 60px;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.shaking {
+    animation: shake 0.5s ease-in-out infinite;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(-10deg); }
+}
+
+.rps-choices-grid {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.rps-choice-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    border: none;
+    background: #f0f0f3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.dark .rps-choice-btn {
+    background: #2d2f31;
+}
+
+.rps-choice-btn:hover:not(:disabled) {
+    transform: translateY(-5px) scale(1.05);
+    background: #e1e1e6;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.rps-choice-btn.selected {
+    background: #5d5fef;
+    color: white;
+}
+
+.rps-choice-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.rps-choice-icon {
+    font-size: 28px;
+    margin-bottom: 2px;
+}
+
+.rps-choice-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.rps-vs-badge {
+    background: #5d5fef;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 24px;
+    box-shadow: 0 4px 15px rgba(93, 95, 239, 0.3);
+    z-index: 10;
+}
+
+.rps-result-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(93, 95, 239, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    z-index: 100;
+    animation: fadeIn 0.4s ease;
+}
+
+.rps-result-text {
+    font-size: 5rem;
+    font-weight: 900;
+    margin-bottom: 20px;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.rps-restart-btn {
+    background: white;
+    color: #5d5fef;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 20px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.rps-restart-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(255,255,255,0.4);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.rps-status-pill {
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.status-waiting { background: #fef3c7; color: #92400e; }
+.status-ready { background: #dcfce7; color: #166534; }
+.dark .status-waiting { background: #451a03; color: #fcd34d; }
+.dark .status-ready { background: #064e3b; color: #6ee7b7; }

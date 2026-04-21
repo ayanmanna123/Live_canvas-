@@ -87,14 +87,13 @@ const Games = () => {
       disabled: true
     },
     {
-      id: 'drawing',
-      name: 'Draw & Guess',
-      description: 'Draw with friends and guess the word!',
-      icon: <Star className="size-10 text-yellow-500" />,
-      color: 'bg-yellow-100',
-      players: '2-10 Players',
+      id: 'rockpaperscissors',
+      name: 'Rock Paper Scissors',
+      description: 'The ultimate battle of choices. Blind pick and reveal!',
+      icon: <Star className="size-10 text-blue-500" />,
+      color: 'bg-blue-100',
+      players: '2 Players',
       rating: '4.8',
-      disabled: true
     },
     {
       id: 'quiz',

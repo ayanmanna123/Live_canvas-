@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import CanvasRoom from './pages/CanvasRoom';
 import Games from './pages/Games';
 import TicTacToePage from './pages/TicTacToePage';
+import RockPaperScissorsPage from './pages/RockPaperScissorsPage';
 import GameInviteModal from './components/games/GameInviteModal';
 import './App.css';
 
@@ -19,6 +20,7 @@ function App() {
             <Route path="/room/:roomId" element={<CanvasRoom />} />
             <Route path="/games" element={<Games />} />
             <Route path="/games/tictactoe" element={<TicTacToePage />} />
+            <Route path="/games/rockpaperscissors" element={<RockPaperScissorsPage />} />
           </Routes>
         </div>
       </Router>
