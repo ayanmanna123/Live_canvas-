@@ -95,6 +95,15 @@ const Games = () => {
       rating: '4.8',
     },
     {
+      id: 'chess',
+      name: 'Chess',
+      description: 'The ultimate strategy game. Checkmate your opponent!',
+      icon: <Gamepad2 className="size-10 text-slate-700" />,
+      color: 'bg-slate-200',
+      players: '2 Players',
+      rating: '5.0',
+    },
+    {
       id: 'quiz',
       name: 'Mega Quiz',
       description: 'Test your knowledge on various topics!',
