@@ -15,6 +15,10 @@ const Games = () => {
   const [showOpponentModal, setShowOpponentModal] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [invitationStatus, setInvitationStatus] = useState('');
+  const [playerCount, setPlayerCount] = useState(2);
+  const [selectedOpponents, setSelectedOpponents] = useState([]);
+  const [acceptedOpponents, setAcceptedOpponents] = useState([]);
+  const [showPlayerCountModal, setShowPlayerCountModal] = useState(false);
 
   // Re-join room if we have the info but socket isn't in it (e.g. page refresh)
   useEffect(() => {
@@ -35,26 +39,47 @@ const Games = () => {
 
       const handleInviteResult = ({ from, accepted, gameId }) => {
         if (accepted) {
-          setInvitationStatus('Accepted! Redirecting...');
-          setTimeout(() => {
-            navigate(`/games/${gameId}`, { 
-              state: { 
-                roomId: currentRoomId, 
-                userName: currentUserName, 
-                opponent: from, 
-                isInviter: true 
-              } 
+          if (gameId === 'ludo') {
+            setAcceptedOpponents(prev => {
+              const newList = [...prev.filter(u => u.id !== from.id), from];
+              setInvitationStatus(`${newList.length} / ${playerCount - 1} players accepted`);
+              return newList;
             });
-          }, 1500);
+          } else {
+            setInvitationStatus('Accepted! Redirecting...');
+            setTimeout(() => {
+              navigate(`/games/${gameId}`, { 
+                state: { roomId: currentRoomId, userName: currentUserName, opponent: from, isInviter: true } 
+              });
+            }, 1500);
+          }
         } else {
-          setInvitationStatus('Invitation Declined');
-          setIsInviting(false);
+          setInvitationStatus(`${from.name} declined the invitation`);
           setTimeout(() => setInvitationStatus(''), 2000);
+        }
+      };
+
+      const handleGameStart = ({ gameId, participants, inviter }) => {
+        if (gameId === 'ludo') {
+           navigate(`/games/ludo`, {
+             state: { 
+               roomId: currentRoomId, 
+               userName: currentUserName, 
+               opponents: participants.filter(p => p.id !== socket.id),
+               isInviter: socket.id === inviter.id,
+               playerCount: participants.length
+             }
+           });
         }
       };
 
       socket.on('user-list-update', handleUserList);
       socket.on('game-invite-result', handleInviteResult);
+      socket.on('receive-game-move', (move) => {
+        if (move.type === 'START_GAME') {
+            handleGameStart(move);
+        }
+      });
 
       // Then emit
       socket.emit('join-room', { roomId: currentRoomId, userName: currentUserName });
@@ -104,6 +129,15 @@ const Games = () => {
       rating: '5.0',
     },
     {
+      id: 'ludo',
+      name: 'Ludo',
+      description: 'Classic board game fun! Support for 2, 3, or 4 players.',
+      icon: <Trophy className="size-10 text-orange-500" />,
+      color: 'bg-orange-100',
+      players: '2-4 Players',
+      rating: '5.0',
+    },
+    {
       id: 'quiz',
       name: 'Mega Quiz',
       description: 'Test your knowledge on various topics!',
@@ -118,18 +152,57 @@ const Games = () => {
   const handleGameClick = (game) => {
     if (game.disabled) return;
     setSelectedGame(game);
-    setShowOpponentModal(true);
+    if (game.id === 'ludo') {
+      setShowPlayerCountModal(true);
+    } else {
+      setPlayerCount(2);
+      setShowOpponentModal(true);
+    }
   };
 
-  const sendInvitation = (opponent) => {
-    if (!socket) return;
+  const toggleOpponent = (user) => {
+    if (selectedOpponents.some(o => o.id === user.id)) {
+      setSelectedOpponents(selectedOpponents.filter(o => o.id !== user.id));
+    } else {
+      if (selectedOpponents.length < playerCount - 1) {
+        setSelectedOpponents([...selectedOpponents, user]);
+      }
+    }
+  };
+
+  const sendInvitations = () => {
+    if (!socket || selectedOpponents.length === 0) return;
     setIsInviting(true);
-    setInvitationStatus(`Inviting ${opponent.name}...`);
-    socket.emit('game-invite', {
-      roomId,
-      from: { id: socket.id, name: userName },
-      to: opponent,
-      gameId: selectedGame.id
+    setInvitationStatus(`Inviting ${selectedOpponents.map(o => o.name).join(', ')}...`);
+    
+    // For now, we emit separate invites, but the first one who accepts 
+    // will trigger the navigation. We'll refine this for multi-player ludo.
+    selectedOpponents.forEach(opponent => {
+      socket.emit('game-invite', {
+        roomId,
+        from: { id: socket.id, name: userName },
+        to: opponent,
+        gameId: selectedGame.id,
+        playerCount: playerCount // Include intended player count
+      });
+    });
+  };
+
+  const startGame = () => {
+    const participants = [{ id: socket.id, name: userName }, ...acceptedOpponents];
+    
+    // Broadcast start to everyone in the lobby
+    acceptedOpponents.forEach(opponent => {
+       socket.emit('game-move', {
+         roomId,
+         to: opponent,
+         move: { type: 'START_GAME', gameId: 'ludo', participants, inviter: { id: socket.id, name: userName } }
+       });
+    });
+
+    // Navigate self
+    navigate(`/games/ludo`, {
+      state: { roomId, userName, opponents: acceptedOpponents, isInviter: true, playerCount: participants.length }
     });
   };
 
@@ -186,14 +259,52 @@ const Games = () => {
           ))}
         </div>
 
+        {/* Player Count Modal for Ludo */}
+        {showPlayerCountModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-md-surface-container-high w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border border-md-outline/10 scale-in-center">
+              <h2 className="text-2xl font-black text-md-on-surface mb-6 text-center">Number of Players</h2>
+              <div className="grid grid-cols-1 gap-4">
+                {[2, 3, 4].map((count) => (
+                  <button
+                    key={count}
+                    onClick={() => {
+                      setPlayerCount(count);
+                      setShowPlayerCountModal(false);
+                      setShowOpponentModal(true);
+                      setSelectedOpponents([]);
+                    }}
+                    className="flex items-center justify-between p-6 rounded-3xl bg-md-surface-container hover:bg-md-primary/10 border border-md-outline/5 transition-all hover:scale-[1.02]"
+                  >
+                    <span className="text-xl font-bold">{count} Players</span>
+                    <Users className="size-6 text-md-primary" />
+                  </button>
+                ))}
+              </div>
+              <Button 
+                variant="text" 
+                className="w-full mt-6 text-md-on-surface-variant font-bold"
+                onClick={() => setShowPlayerCountModal(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Opponent Selection Modal */}
         {showOpponentModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-md-surface-container-high w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl border border-md-outline/10 scale-in-center">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-black text-md-on-surface">Select Opponent</h2>
+                <div>
+                  <h2 className="text-2xl font-black text-md-on-surface">Select Opponents</h2>
+                  <p className="text-xs font-bold text-md-primary uppercase tracking-tighter">
+                    Choose {playerCount - 1} more player{playerCount > 2 ? 's' : ''}
+                  </p>
+                </div>
                 <button 
-                  onClick={() => { setShowOpponentModal(false); setInvitationStatus(''); setIsInviting(false); }}
+                  onClick={() => { setShowOpponentModal(false); setInvitationStatus(''); setIsInviting(false); setSelectedOpponents([]); }}
                   className="p-2 rounded-full hover:bg-md-on-surface/10 transition-colors"
                 >
                   <X className="size-5" />
@@ -210,31 +321,61 @@ const Games = () => {
                   </div>
                   <p className="text-xl font-bold text-md-on-surface">{invitationStatus}</p>
                   <p className="text-md-on-surface-variant mt-2">Waiting for confirmation...</p>
+                  
+                  {selectedGame?.id === 'ludo' && acceptedOpponents.length > 0 && (
+                    <Button 
+                        onClick={startGame}
+                        className="mt-8 h-14 px-12 rounded-2xl bg-md-primary font-black animate-bounce shadow-xl"
+                    >
+                        START GAME ({acceptedOpponents.length + 1} players)
+                    </Button>
+                  )}
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto px-1 custom-scrollbar">
-                  {roomUsers.length > 0 ? (
-                    roomUsers.map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => sendInvitation(user)}
-                        className="w-full flex items-center justify-between p-4 rounded-3xl bg-md-surface-container hover:bg-md-primary/10 border border-md-outline/5 transition-all hover:scale-[1.02] active:scale-[0.98] group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-full bg-md-primary/10 flex items-center justify-center text-md-primary font-black">
-                            {user.name.charAt(0).toUpperCase()}
+                <div className="space-y-3">
+                  <div className="max-h-[300px] overflow-y-auto px-1 custom-scrollbar space-y-2">
+                    {roomUsers.length > 0 ? (
+                      roomUsers.map((user) => (
+                        <button
+                          key={user.id}
+                          onClick={() => toggleOpponent(user)}
+                          className={`w-full flex items-center justify-between p-4 rounded-3xl border transition-all ${
+                            selectedOpponents.some(o => o.id === user.id)
+                              ? 'bg-md-primary/20 border-md-primary shadow-md scale-[1.02]'
+                              : 'bg-md-surface-container border-md-outline/5 hover:bg-md-primary/10'
+                          }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`h-10 w-10 rounded-full flex items-center justify-center font-black ${
+                              selectedOpponents.some(o => o.id === user.id) ? 'bg-md-primary text-md-on-primary' : 'bg-md-primary/10 text-md-primary'
+                            }`}>
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-bold text-md-on-surface">{user.name}</span>
                           </div>
-                          <span className="font-bold text-md-on-surface">{user.name}</span>
-                        </div>
-                        <UserPlus className="size-5 text-md-on-surface-variant group-hover:text-md-primary transition-colors" />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <p className="text-md-on-surface-variant font-medium">No other players online in the room right now.</p>
-                      <p className="text-xs text-md-primary mt-2 uppercase font-black tracking-widest cursor-pointer hover:underline" onClick={() => window.location.reload()}>Refresh List</p>
-                    </div>
-                  )}
+                          {selectedOpponents.some(o => o.id === user.id) ? (
+                            <div className="h-6 w-6 rounded-full bg-md-primary flex items-center justify-center text-md-on-primary">
+                              <Check className="size-4" />
+                            </div>
+                          ) : (
+                            <UserPlus className="size-5 text-md-on-surface-variant" />
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-md-on-surface-variant font-medium">No other players online in the room right now.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    disabled={selectedOpponents.length < playerCount - 1 || roomUsers.length === 0}
+                    onClick={sendInvitations}
+                    className="w-full h-14 rounded-2xl text-lg font-black mt-4 shadow-lg shadow-md-primary/20"
+                  >
+                    SEND INVITES ({selectedOpponents.length}/{playerCount - 1})
+                  </Button>
                 </div>
               )}
             </div>
