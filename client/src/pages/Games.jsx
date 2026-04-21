@@ -138,7 +138,14 @@ const Games = () => {
           </div>
           <Button 
             variant="tonal" 
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              const currentRoomId = roomId || sessionStorage.getItem('lastRoomId');
+              if (currentRoomId) {
+                navigate(`/room/${currentRoomId}`);
+              } else {
+                navigate('/');
+              }
+            }}
             className="rounded-2xl h-12 px-6 shadow-md transition-transform hover:scale-105 active:scale-95"
           >
             <ArrowLeft className="size-5 mr-2" />
