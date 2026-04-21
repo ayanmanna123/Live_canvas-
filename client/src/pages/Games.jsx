@@ -77,14 +77,13 @@ const Games = () => {
       rating: '4.9',
     },
     {
-      id: 'chess',
-      name: 'Chess',
-      description: 'The ultimate game of strategy. Coming soon!',
-      icon: <Trophy className="size-10 text-blue-500" />,
-      color: 'bg-blue-100',
+      id: 'snakeandladder',
+      name: 'Snake & Ladder',
+      description: 'Race to the top! Watch out for snakes and climb the ladders.',
+      icon: <Trophy className="size-10 text-emerald-500" />,
+      color: 'bg-emerald-100',
       players: '2 Players',
       rating: '5.0',
-      disabled: true
     },
     {
       id: 'rockpaperscissors',

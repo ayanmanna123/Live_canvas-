@@ -6,6 +6,7 @@ import CanvasRoom from './pages/CanvasRoom';
 import Games from './pages/Games';
 import TicTacToePage from './pages/TicTacToePage';
 import RockPaperScissorsPage from './pages/RockPaperScissorsPage';
+import SnakeAndLadderPage from './pages/SnakeAndLadderPage';
 import GameInviteModal from './components/games/GameInviteModal';
 import './App.css';
 
@@ -21,6 +22,7 @@ function App() {
             <Route path="/games" element={<Games />} />
             <Route path="/games/tictactoe" element={<TicTacToePage />} />
             <Route path="/games/rockpaperscissors" element={<RockPaperScissorsPage />} />
+            <Route path="/games/snakeandladder" element={<SnakeAndLadderPage />} />
           </Routes>
         </div>
       </Router>
