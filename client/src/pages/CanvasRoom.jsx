@@ -474,52 +474,102 @@ const CanvasRoom = () => {
         />
       )}
 
-      {/* Sidebar - Users List & Leave Button */}
-      <div className="absolute top-4 sm:top-24 left-4 sm:left-6 z-40 flex flex-col gap-3 pointer-events-none">
-        {/* Active Users Card */}
-        <div 
-          className="p-3 sm:p-4 rounded-2xl bg-slate-900/80 sm:bg-white/5 backdrop-blur-xl sm:backdrop-blur-md border border-white/10 shadow-2xl sm:shadow-xl pointer-events-auto transition-all duration-300"
-        >
-          <div 
-            className="flex items-center gap-2 text-slate-400 cursor-pointer sm:cursor-default"
-            onClick={() => window.innerWidth < 640 && setIsUsersListOpen(!isUsersListOpen)}
-          >
-            <div className="relative">
-              <UsersIcon className="h-4 w-4 sm:h-4 sm:w-4" />
-              <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-indigo-600 text-[8px] font-bold text-white ring-1 ring-slate-900 sm:hidden">
-                {users.length}
-              </span>
-            </div>
-            <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Active Users</span>
-            <span className="sm:hidden text-xs font-bold text-slate-200">{users.length}</span>
+      {/* Header Bar */}
+      <div className="fixed top-0 left-0 right-0 h-16 z-[60] flex items-center justify-between px-6 pointer-events-none">
+        {/* Top Left: Logo & Room Info */}
+        <div className="flex items-center gap-4 pointer-events-auto glass-light rounded-2xl p-1.5 pr-4 animate-in slide-in-from-top-10 duration-500">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Sparkles className="size-5 text-white" />
           </div>
-
-          {(isUsersListOpen || window.innerWidth >= 640) && (
-            <div className="mt-4 space-y-2 max-h-48 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
-              {users.map((user) => (
-                <div key={user.id} className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${user.id === socket?.id ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
-                  <span className="text-sm text-slate-200 truncate font-medium max-w-[120px]">
-                    {user.name} {user.id === socket?.id && '(You)'}
-                  </span>
-                </div>
-              ))}
+          <div>
+            <h1 className="text-sm font-black text-white leading-tight tracking-wide">
+              {activeCanvas?.name || 'Untitled'}
+            </h1>
+            <div className="flex items-center gap-2">
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Room: {roomId}</p>
+               <div className="h-1 w-1 rounded-full bg-slate-600" />
+               <div className="flex items-center gap-1.5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-slate-300">{users.length} Online</span>
+               </div>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Leave Room Button */}
-        <button 
-          onClick={() => navigate('/')}
-          className={`group flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-900/80 sm:bg-white/5 hover:bg-red-500/10 text-slate-400 hover:text-red-400 border border-white/10 sm:border-white/5 hover:border-red-500/20 transition-all pointer-events-auto font-medium text-sm backdrop-blur-xl sm:backdrop-blur-none ${!isUsersListOpen && window.innerWidth < 640 ? 'w-10 h-10' : 'w-full'}`}
-          title="Leave Room"
-        >
-          <LogOut className="h-4 w-4" />
-          {(isUsersListOpen || window.innerWidth >= 640) && <span>Leave Room</span>}
-        </button>
+        {/* Top Right: Global Actions */}
+        <div className="flex items-center gap-2 pointer-events-auto glass-light rounded-2xl p-1.5 animate-in slide-in-from-top-10 duration-500 delay-100">
+          <button 
+            onClick={() => setIsCanvasListOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all"
+          >
+            <History className="size-4" />
+            <span className="text-[11px] font-black uppercase tracking-wider">Canvases</span>
+          </button>
+          
+          <button 
+            onClick={handleCapture}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all"
+          >
+            <Camera className="size-4" />
+            <span className="text-[11px] font-black uppercase tracking-wider">Capture</span>
+          </button>
+
+          <button 
+            onClick={() => setIsNewCanvasModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-black text-[11px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+          >
+            <Plus className="size-4 stroke-[3px]" />
+            <span>New</span>
+          </button>
+
+          <div className="w-px h-6 bg-white/10 mx-1" />
+
+          <button 
+            onClick={() => navigate('/')}
+            className="size-10 flex items-center justify-center rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-all"
+            title="Leave Room"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Chat Sidebar */}
+      {/* User Presences (Expandable on click) */}
+      <div className="fixed top-20 left-6 z-40 pointer-events-none">
+         <div 
+            className="pointer-events-auto glass-light rounded-2xl p-2 cursor-pointer group transition-all hover:bg-white/5"
+            onClick={() => setIsUsersListOpen(!isUsersListOpen)}
+         >
+            <div className="flex -space-x-2">
+               {users.slice(0, 3).map((user, i) => (
+                  <div key={user.id} className="size-8 rounded-full border-2 border-slate-900 bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg" style={{ zIndex: 10 - i }}>
+                     {user.name.charAt(0).toUpperCase()}
+                  </div>
+               ))}
+               {users.length > 3 && (
+                  <div className="size-8 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-white z-0">
+                     +{users.length - 3}
+                  </div>
+               )}
+            </div>
+
+            {isUsersListOpen && (
+               <div className="mt-4 space-y-2 glass p-3 rounded-2xl min-w-[160px] animate-in fade-in slide-in-from-top-2 duration-200">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Active Users</p>
+                  {users.map((user) => (
+                    <div key={user.id} className="flex items-center gap-2 px-1 py-1">
+                      <div className={`size-1.5 rounded-full ${user.id === socket?.id ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
+                      <span className="text-xs text-slate-200 font-medium truncate">
+                        {user.name} {user.id === socket?.id && '(You)'}
+                      </span>
+                    </div>
+                  ))}
+               </div>
+            )}
+         </div>
+      </div>
+
+      {/* Side Panels */}
       <Chat 
         socket={socket}
         roomId={roomId}
@@ -549,63 +599,20 @@ const CanvasRoom = () => {
       />
 
       {/* Drawing Canvas */}
-      <DrawingCanvas 
-        ref={canvasRef}
-        roomId={roomId} 
-        canvasId={activeCanvas?._id}
-        userName={userName}
-        color={color}
-        bgColor={bgColor}
-        size={size}
-        tool={tool}
-        onPan={setPanOffset}
-        showRopes={showRopes}
-        autoMode={autoMode}
-      />
-
-      {/* Top Navigation Bar */}
-      <div className="fixed top-0 left-0 right-0 h-16 z-[60] flex items-center px-6 bg-slate-900/50 backdrop-blur-xl border-b border-white/5 pointer-events-none">
-        <div className="flex items-center gap-6 pointer-events-auto w-full">
-          {/* Logo & Name */}
-          <div className="flex items-center gap-3 pr-6 border-r border-white/10">
-            <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-sm font-black text-white leading-tight tracking-wide">
-                {activeCanvas?.name || 'Untitled Canvas'}
-              </h1>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em]">Room: {roomId}</p>
-            </div>
-          </div>
-          
-          {/* Action Buttons - Explicitly on the left */}
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setIsCanvasListOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
-            >
-              <History className="h-4 w-4" />
-              <span className="text-xs font-bold">Canvases</span>
-            </button>
-            
-            <button 
-              onClick={handleCapture}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
-            >
-              <Camera className="h-4 w-4" />
-              <span className="text-xs font-bold">Capture</span>
-            </button>
-
-            <button 
-              onClick={() => setIsNewCanvasModalOpen(true)}
-              className="ml-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-black text-[11px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2"
-            >
-              <Plus className="h-3.5 w-3.5 stroke-[3px]" />
-              <span>New Canvas</span>
-            </button>
-          </div>
-        </div>
+      <div className="absolute inset-0 z-0">
+        <DrawingCanvas 
+          ref={canvasRef}
+          roomId={roomId} 
+          canvasId={activeCanvas?._id}
+          userName={userName}
+          color={color}
+          bgColor={bgColor}
+          size={size}
+          tool={tool}
+          onPan={setPanOffset}
+          showRopes={showRopes}
+          autoMode={autoMode}
+        />
       </div>
 
       {/* Canvas Management Overlays */}
