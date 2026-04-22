@@ -127,18 +127,21 @@ io.on('connection', (socket) => {
     const strokeWithUser = { ...stroke, userId: socket.id, canvasId };
     socket.to(roomId).emit('draw-remote', strokeWithUser);
 
-    // Save to database (only if DB is connected)
+    // Save/Update in database (only if DB is connected)
     if (mongoose.connection.readyState === 1) {
       try {
-        const newStroke = new Stroke({
-          roomId,
-          canvasId,
-          userId: socket.id,
-          ...stroke
-        });
-        await newStroke.save();
+        await Stroke.findOneAndUpdate(
+          { id: stroke.id }, // Match by our custom nanoid
+          { 
+            roomId,
+            canvasId,
+            userId: socket.id,
+            ...stroke 
+          },
+          { upsert: true, new: true }
+        );
       } catch (error) {
-        console.error('Error saving stroke:', error);
+        console.error('Error saving/updating stroke:', error);
       }
     }
   });

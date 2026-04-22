@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, f
 import { useSocket } from '../contexts/SocketContext';
 import { nanoid } from 'nanoid';
 import { getUserColor } from '../lib/userColor';
+import { Trash2, Copy, Palette, Layers, ChevronUp, ChevronDown, Check } from 'lucide-react';
 
 const initialState = {
   strokes: [],
@@ -11,28 +12,53 @@ const initialState = {
 
 const canvasReducer = (state, action) => {
   switch (action.type) {
-    case 'SET_HISTORY':
+    case 'SET_HISTORY': {
+      // Deduplicate history by ID to prevent ghosting from multiple move frames in DB
+      const deduplicated = [];
+      const seenIds = new Set();
+      // Go backwards to keep the latest ones if there are duplicates
+      for (let i = action.history.length - 1; i >= 0; i--) {
+        const stroke = action.history[i];
+        if (!seenIds.has(stroke.id)) {
+          deduplicated.unshift(stroke);
+          seenIds.add(stroke.id);
+        }
+      }
       return {
         ...state,
-        strokes: action.history,
+        strokes: deduplicated,
         undoStack: [],
         redoStack: []
       };
+    }
 
-    case 'ADD_STROKE':
-      // Local stroke: add to strokes and undo stack, clear redo
+    case 'ADD_STROKE': {
+      const existingIndex = state.strokes.findIndex(s => s.id === action.stroke.id);
+      if (existingIndex > -1) {
+        const newStrokes = [...state.strokes];
+        newStrokes[existingIndex] = action.stroke;
+        return { ...state, strokes: newStrokes };
+      }
       return {
         ...state,
         strokes: [...state.strokes, action.stroke],
         undoStack: [...state.undoStack, action.stroke.id],
         redoStack: []
       };
+    }
 
-    case 'REMOTE_STROKE':
+    case 'REMOTE_STROKE': {
+      const existingIndex = state.strokes.findIndex(s => s.id === action.stroke.id);
+      if (existingIndex > -1) {
+        const newStrokes = [...state.strokes];
+        newStrokes[existingIndex] = action.stroke;
+        return { ...state, strokes: newStrokes };
+      }
       return {
         ...state,
         strokes: [...state.strokes, action.stroke]
       };
+    }
 
     case 'UNDO': {
       if (state.undoStack.length === 0) return state;
@@ -94,11 +120,69 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
   // Text Input State
   const [textInput, setTextInput] = useState(null); // { x, y, value, worldX, worldY }
   
+  const [selectedId, setSelectedId] = useState(null);
+  const [dragStart, setDragStart] = useState(null); // { x, y }
+  const [initialStroke, setInitialStroke] = useState(null);
+  const [transformMode, setTransformMode] = useState(null); // 'move' | 'resize-nw' | 'resize-ne' | 'resize-sw' | 'resize-se'
+  const [editMenu, setEditMenu] = useState(null); // { x, y, strokeId }
+
   const currentStroke = useRef(null);
   const deletedStrokesThisSession = useRef(new Set());
   const { socket } = useSocket();
 
-  // Focus textarea when it appears
+  const getBoundingBox = (stroke) => {
+    if (!stroke || !stroke.points || stroke.points.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    stroke.points.forEach(p => {
+      minX = Math.min(minX, p.x);
+      minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x);
+      maxY = Math.max(maxY, p.y);
+    });
+    
+    // Add padding based on stroke size
+    const padding = (stroke.size || 5) / 2 + 5;
+    return {
+      x: minX - padding,
+      y: minY - padding,
+      width: (maxX - minX) + padding * 2,
+      height: (maxY - minY) + padding * 2,
+      minX, minY, maxX, maxY
+    };
+  };
+
+  const isPointInStroke = (x, y, stroke) => {
+    if (stroke.type === 'text') {
+      const box = getBoundingBox(stroke);
+      return x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height;
+    }
+    
+    // Check distance to segments
+    const threshold = Math.max(10, stroke.size);
+    for (let i = 0; i < stroke.points.length - 1; i++) {
+      const dist = getDistancePointToSegment(
+        x, y, 
+        stroke.points[i].x, stroke.points[i].y, 
+        stroke.points[i+1].x, stroke.points[i+1].y
+      );
+      if (dist < threshold) return true;
+    }
+    return false;
+  };
+
+  // Handle keyboard shortcuts (Delete/Backspace)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && !textInput) {
+        dispatch({ type: 'DELETE_STROKE', strokeId: selectedId });
+        socket.emit('delete-stroke', { roomId, canvasId, strokeId: selectedId });
+        setSelectedId(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, textInput, roomId, canvasId, socket]);
   useEffect(() => {
     if (textInput && textareaRef.current) {
       textareaRef.current.focus();
@@ -518,6 +602,50 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     const worldX = offsetX - panOffset.x;
     const worldY = offsetY - panOffset.y;
 
+    if (tool === 'select') {
+      const worldX = offsetX - panOffset.x;
+      const worldY = offsetY - panOffset.y;
+
+      // 1. Check if clicking on the handles of current selection
+      if (selectedId) {
+        const selectedStroke = strokes.find(s => s.id === selectedId);
+        if (selectedStroke) {
+          const box = getBoundingBox(selectedStroke);
+          const handleSize = 12;
+          const handles = {
+            'resize-nw': { x: box.minX, y: box.minY },
+            'resize-ne': { x: box.maxX, y: box.minY },
+            'resize-sw': { x: box.minX, y: box.maxY },
+            'resize-se': { x: box.maxX, y: box.maxY }
+          };
+
+          for (const [mode, pos] of Object.entries(handles)) {
+            if (Math.abs(worldX - pos.x) < handleSize && Math.abs(worldY - pos.y) < handleSize) {
+              setTransformMode(mode);
+              setDragStart({ x: worldX, y: worldY });
+              setInitialStroke(JSON.parse(JSON.stringify(selectedStroke)));
+              setIsDrawing(true);
+              return;
+            }
+          }
+        }
+      }
+
+      // 2. Check if clicking on an object
+      const hit = [...strokes].reverse().find(s => isPointInStroke(worldX, worldY, s));
+      if (hit) {
+        setSelectedId(hit.id);
+        setDragStart({ x: worldX, y: worldY });
+        setInitialStroke(JSON.parse(JSON.stringify(hit)));
+        setTransformMode('move');
+        setIsDrawing(true);
+      } else {
+        setSelectedId(null);
+        setTransformMode(null);
+      }
+      return;
+    }
+
     if (tool === 'eraser') {
       setIsDrawing(true);
       handleEraserCollision(worldX, worldY);
@@ -566,6 +694,55 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
 
     const worldX = offsetX - panOffset.x;
     const worldY = offsetY - panOffset.y;
+
+    if (tool === 'select' && selectedId && isDrawing && dragStart && transformMode) {
+      const dx = worldX - dragStart.x;
+      const dy = worldY - dragStart.y;
+      
+      let updatedStroke = { ...initialStroke };
+      const box = getBoundingBox(initialStroke);
+
+      if (transformMode === 'move') {
+        updatedStroke.points = initialStroke.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+      } else {
+        // Resizing logic
+        let anchorX, anchorY, sx, sy;
+        const minSize = 10;
+
+        if (transformMode === 'resize-se') {
+          anchorX = box.minX; anchorY = box.minY;
+          sx = Math.max(minSize, box.width + dx) / box.width;
+          sy = Math.max(minSize, box.height + dy) / box.height;
+        } else if (transformMode === 'resize-sw') {
+          anchorX = box.maxX; anchorY = box.minY;
+          sx = Math.max(minSize, box.width - dx) / box.width;
+          sy = Math.max(minSize, box.height + dy) / box.height;
+        } else if (transformMode === 'resize-ne') {
+          anchorX = box.minX; anchorY = box.maxY;
+          sx = Math.max(minSize, box.width + dx) / box.width;
+          sy = Math.max(minSize, box.height - dy) / box.height;
+        } else if (transformMode === 'resize-nw') {
+          anchorX = box.maxX; anchorY = box.maxY;
+          sx = Math.max(minSize, box.width - dx) / box.width;
+          sy = Math.max(minSize, box.height - dy) / box.height;
+        }
+
+        updatedStroke.points = initialStroke.points.map(p => ({
+          x: anchorX + (p.x - anchorX) * sx,
+          y: anchorY + (p.y - anchorY) * sy
+        }));
+        
+        // For text, also scale font size if it's uniform? No, just scale points for now.
+        // Actually, text size should be updated.
+        if (updatedStroke.type === 'text') {
+           updatedStroke.size = initialStroke.size * ((sx + sy) / 2);
+        }
+      }
+      
+      dispatch({ type: 'ADD_STROKE', stroke: updatedStroke });
+      socket.emit('draw', { roomId, canvasId, stroke: updatedStroke });
+      return;
+    }
 
     if (tool === 'eraser') {
       handleEraserCollision(worldX, worldY);
@@ -620,8 +797,11 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     if (!isDrawing) return;
     setIsDrawing(false);
     deletedStrokesThisSession.current.clear();
+    setDragStart(null);
+    setInitialStroke(null);
+    setTransformMode(null);
 
-    if (tool === 'eraser' || tool === 'text') return;
+    if (tool === 'eraser' || tool === 'text' || tool === 'select') return;
 
     if (currentStroke.current && currentStroke.current.points.length >= 2) {
       let finalPoints = currentStroke.current.points;
@@ -638,6 +818,77 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       socket.emit('draw', { roomId, canvasId, stroke: finalStroke });
     }
     currentStroke.current = null;
+  };
+
+  const handleDoubleClick = (e) => {
+    const rect = containerRef.current.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    const worldX = offsetX - panOffset.x;
+    const worldY = offsetY - panOffset.y;
+
+    const hit = [...strokes].reverse().find(s => isPointInStroke(worldX, worldY, s));
+    if (hit) {
+      setSelectedId(hit.id);
+      setEditMenu({ 
+        x: offsetX, 
+        y: offsetY, 
+        strokeId: hit.id 
+      });
+    }
+  };
+
+  const handleEditAction = (action, value) => {
+    if (!editMenu) return;
+    const strokeId = editMenu.strokeId;
+    const stroke = strokes.find(s => s.id === strokeId);
+    if (!stroke) return;
+
+    switch (action) {
+      case 'color': {
+        const updated = { ...stroke, color: value };
+        dispatch({ type: 'ADD_STROKE', stroke: updated });
+        socket.emit('draw', { roomId, canvasId, stroke: updated });
+        // Keep menu open for color changes
+        return; 
+      }
+      case 'duplicate': {
+        const newId = nanoid();
+        const duplicated = { 
+          ...stroke, 
+          id: newId, 
+          points: stroke.points.map(p => ({ x: p.x + 20, y: p.y + 20 })) 
+        };
+        dispatch({ type: 'ADD_STROKE', stroke: duplicated });
+        socket.emit('draw', { roomId, canvasId, stroke: duplicated });
+        setSelectedId(newId);
+        // Move the edit menu to the new duplicated item's position
+        setEditMenu(prev => ({ 
+          ...prev, 
+          strokeId: newId, 
+          x: prev.x + 20, 
+          y: prev.y + 20 
+        }));
+        return;
+      }
+      case 'delete': {
+        dispatch({ type: 'DELETE_STROKE', strokeId });
+        socket.emit('delete-stroke', { roomId, canvasId, strokeId });
+        setSelectedId(null);
+        break;
+      }
+      case 'move-front': {
+        const otherStrokes = strokes.filter(s => s.id !== strokeId);
+        const updatedHistory = [...otherStrokes, stroke];
+        dispatch({ type: 'SET_HISTORY', history: updatedHistory });
+        socket.emit('draw', { roomId, canvasId, stroke: stroke });
+        // Keep menu open
+        return;
+      }
+      default:
+        break;
+    }
+    setEditMenu(null);
   };
 
   const handleTextCommit = (e) => {
@@ -676,10 +927,47 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
         onPointerMove={performInteraction}
         onPointerUp={stopInteraction}
         onPointerLeave={stopInteraction}
-        onClick={handleCanvasClick}
+        onClick={(e) => {
+          handleCanvasClick(e);
+          setEditMenu(null); // Close menu on click elsewhere
+        }}
+        onDoubleClick={handleDoubleClick}
         onContextMenu={(e) => e.preventDefault()}
-        className={`block touch-none ${isPanning ? 'cursor-grabbing' : tool === 'pan' ? 'cursor-grab' : tool === 'text' ? 'cursor-text' : 'cursor-crosshair'}`}
+        className={`block touch-none ${isPanning ? 'cursor-grabbing' : tool === 'pan' ? 'cursor-grab' : tool === 'text' ? 'cursor-text' : tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
       />
+
+      {/* Selection Box Overlay */}
+      {selectedId && (
+        (() => {
+          const selectedStroke = strokes.find(s => s.id === selectedId);
+          if (!selectedStroke) return null;
+          const box = getBoundingBox(selectedStroke);
+          if (!box) return null;
+          
+          return (
+            <div 
+              className="absolute pointer-events-none border-2 border-indigo-500 bg-indigo-500/5 z-20"
+              style={{
+                left: box.x + panOffset.x,
+                top: box.y + panOffset.y,
+                width: box.width,
+                height: box.height,
+                transition: isDrawing && tool === 'select' ? 'none' : 'all 0.1s ease-out'
+              }}
+            >
+              <div className="absolute -top-2 -left-2 size-4 bg-white border-2 border-indigo-500 rounded-sm" />
+              <div className="absolute -top-2 -right-2 size-4 bg-white border-2 border-indigo-500 rounded-sm" />
+              <div className="absolute -bottom-2 -left-2 size-4 bg-white border-2 border-indigo-500 rounded-sm" />
+              <div className="absolute -bottom-2 -right-2 size-4 bg-white border-2 border-indigo-500 rounded-sm" />
+              
+              {/* Tooltip for selected object */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                {selectedStroke.type === 'text' ? 'Text Object' : 'Drawing'} Selected
+              </div>
+            </div>
+          );
+        })()
+      )}
       
       {textInput && (
         <div 
@@ -719,6 +1007,68 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
                </button>
             </div>
           </div>
+        </div>
+      )}
+      {/* Floating Edit Menu */}
+      {editMenu && (
+        <div 
+          className="absolute z-[110] animate-in zoom-in-95 duration-200"
+          style={{ 
+            left: editMenu.x, 
+            top: editMenu.y,
+            transform: 'translate(-50%, -110%)'
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-slate-900/95 border border-white/10 backdrop-blur-xl rounded-2xl p-2 shadow-2xl flex items-center gap-1 min-w-max">
+            {/* Color Quick Picks */}
+            <div className="flex gap-1 pr-2 border-r border-white/10 mr-1">
+              {['#ffffff', '#ef4444', '#10b981', '#3b82f6', '#d946ef'].map(c => (
+                <button
+                  key={c}
+                  onClick={() => handleEditAction('color', c)}
+                  className="size-6 rounded-full border border-white/20 transition-transform hover:scale-125"
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+
+            <button 
+              onClick={() => handleEditAction('duplicate')}
+              className="size-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
+              title="Duplicate"
+            >
+              <Copy className="size-4" />
+            </button>
+
+            <button 
+              onClick={() => handleEditAction('move-front')}
+              className="size-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
+              title="Bring to Front"
+            >
+              <ChevronUp className="size-4" />
+            </button>
+
+            <div className="w-px h-6 bg-white/10 mx-1" />
+
+            <button 
+              onClick={() => handleEditAction('delete')}
+              className="size-9 flex items-center justify-center rounded-xl hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+              title="Delete"
+            >
+              <Trash2 className="size-4" />
+            </button>
+            
+            <button 
+              onClick={() => setEditMenu(null)}
+              className="ml-1 size-9 flex items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:text-white"
+            >
+              <Check className="size-4" />
+            </button>
+          </div>
+          {/* Arrow pointing down */}
+          <div className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 bg-slate-900 border-r border-b border-white/10 rotate-45" />
         </div>
       )}
     </div>

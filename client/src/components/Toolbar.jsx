@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film, Gamepad2 } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film, Gamepad2, MousePointer2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -37,6 +37,7 @@ const Toolbar = ({
   const sizes = [2, 5, 10, 20, 40];
 
   const brushes = [
+    { id: 'select', icon: MousePointer2, label: 'Select' },
     { id: 'pencil', icon: Pencil, label: 'Pencil' },
     { id: 'highlighter', icon: Highlighter, label: 'High' },
     { id: 'neon', icon: Sparkles, label: 'Neon' },
