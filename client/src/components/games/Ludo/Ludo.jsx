@@ -34,7 +34,17 @@ const Ludo = ({ roomId, userName, isInviter, playerCount, opponents }) => {
         ].sort((a, b) => a.name.localeCompare(b.name));
 
         const myIndex = allParticipants.findIndex(p => p.id === socket.id);
-        const roles = [BaseID.BASE_1, BaseID.BASE_2, BaseID.BASE_3, BaseID.BASE_4];
+        
+        // Define roles based on playerCount to match LudoEngine.js
+        let roles = [];
+        if (playerCount === 2) {
+            roles = [BaseID.BASE_1, BaseID.BASE_4]; // Blue and Yellow
+        } else if (playerCount === 3) {
+            roles = [BaseID.BASE_1, BaseID.BASE_2, BaseID.BASE_4]; // Blue, Green, Yellow
+        } else {
+            roles = [BaseID.BASE_1, BaseID.BASE_2, BaseID.BASE_3, BaseID.BASE_4]; // All
+        }
+        
         setMyBase(roles[myIndex]);
         setGameStatus('PLAYING');
     }, [socket, userName, opponents]);

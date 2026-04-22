@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Gamepad2, ArrowLeft, Trophy, Users, Star, UserPlus, Loader2, X } from 'lucide-react';
+import { Gamepad2, ArrowLeft, Trophy, Users, Star, UserPlus, Loader2, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocket } from '@/contexts/SocketContext';
 
@@ -161,13 +161,17 @@ const Games = () => {
   };
 
   const toggleOpponent = (user) => {
-    if (selectedOpponents.some(o => o.id === user.id)) {
-      setSelectedOpponents(selectedOpponents.filter(o => o.id !== user.id));
-    } else {
-      if (selectedOpponents.length < playerCount - 1) {
-        setSelectedOpponents([...selectedOpponents, user]);
+    setSelectedOpponents(prev => {
+      const isSelected = prev.some(o => o.id === user.id);
+      if (isSelected) {
+        return prev.filter(o => o.id !== user.id);
+      } else {
+        if (prev.length < playerCount - 1) {
+          return [...prev, user];
+        }
+        return prev;
       }
-    }
+    });
   };
 
   const sendInvitations = () => {
