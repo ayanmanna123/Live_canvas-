@@ -333,12 +333,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('cursor-move', ({ roomId, userName, position }) => {
-    if (!roomId) return;
-    socket.to(roomId).emit('cursor-move-remote', {
-      userId: socket.id,
-      userName,
-      position
-    });
+    socket.to(roomId).emit('cursor-move-remote', { userId: socket.id, userName, position });
+  });
+
+  socket.on('cursor-reaction', ({ roomId, emoji, position }) => {
+    socket.to(roomId).emit('cursor-reaction-remote', { userId: socket.id, emoji, position });
   });
 
   socket.on('change-background', ({ roomId, color }) => {

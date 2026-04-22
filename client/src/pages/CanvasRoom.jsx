@@ -48,6 +48,8 @@ const CanvasRoom = () => {
   const [movieMasterId, setMovieMasterId] = useState(null);
   const [showGrid, setShowGrid] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
+  const [reactions, setReactions] = useState([]); // { id, emoji, position, userId }
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
   // Canvas Management State
   const [activeCanvas, setActiveCanvas] = useState(null);
@@ -136,6 +138,14 @@ const CanvasRoom = () => {
       setBgColor(newColor);
     });
 
+    socket.on('cursor-reaction-remote', (data) => {
+      const id = Math.random().toString(36).substr(2, 9);
+      setReactions(prev => [...prev, { ...data, id }]);
+      setTimeout(() => {
+        setReactions(prev => prev.filter(r => r.id !== id));
+      }, 2000);
+    });
+
     socket.on('notification', ({ message }) => {
       setNotification(message);
       setTimeout(() => setNotification(null), 3000);
@@ -188,21 +198,45 @@ const CanvasRoom = () => {
     });
 
     socket.on('clear-canvas-remote', ({ canvasId }) => {
-      // Handled by DrawingCanvas typically, but we can sync state here if needed
+      // Handled by DrawingCanvas typically
     });
 
+    const handleMouseMove = (e) => {
+      const position = { x: e.clientX, y: e.clientY };
+      setMousePos(position);
+      socket.emit('cursor-move', { roomId, userName, position });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
     return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
       socket.off('user-list-update');
       socket.off('cursor-move-remote');
+      socket.off('cursor-reaction-remote');
       socket.off('background-changed');
       socket.off('notification');
       socket.off('user-history-update');
       socket.off('webrtc-signal');
       socket.off('movie-update-remote');
       socket.off('sync-to-master');
-      socket.off('get-master-time');
+      socket.off('canvas-list-update');
+      socket.off('active-canvas-update');
     };
   }, [socket, roomId, userName, localStream, inCall]);
+
+  const triggerReaction = (emoji) => {
+    if (!socket) return;
+    const data = { roomId, emoji, position: mousePos };
+    socket.emit('cursor-reaction', data);
+    
+    // Add locally
+    const id = Math.random().toString(36).substr(2, 9);
+    setReactions(prev => [...prev, { ...data, id, userId: socket.id }]);
+    setTimeout(() => {
+      setReactions(prev => prev.filter(r => r.id !== id));
+    }, 2000);
+  };
 
   const createPeer = (userToSignal, callerId, stream, initiator) => {
     const peer = new Peer({
@@ -541,6 +575,7 @@ const CanvasRoom = () => {
         setShowGrid={setShowGrid}
         snapToGrid={snapToGrid}
         setSnapToGrid={setSnapToGrid}
+        onReaction={triggerReaction}
       />
       
       {inCall && localStream && (
@@ -743,6 +778,32 @@ const CanvasRoom = () => {
           )
         ))}
       </div>
+      {/* Reactions Layer */}
+      <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+        {reactions.map((r) => (
+          <div 
+            key={r.id}
+            className="absolute animate-bounce-fade text-3xl select-none"
+            style={{ 
+              left: r.position.x, 
+              top: r.position.y,
+            }}
+          >
+            {r.emoji}
+          </div>
+        ))}
+      </div>
+
+      <style jsx>{`
+        @keyframes bounce-fade {
+          0% { transform: scale(0) translateY(0); opacity: 0; }
+          20% { transform: scale(1.5) translateY(-20px); opacity: 1; }
+          100% { transform: scale(1) translateY(-400px); opacity: 0; }
+        }
+        .animate-bounce-fade {
+          animation: bounce-fade 2s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 };

@@ -28,9 +28,11 @@ const Toolbar = ({
   onOpenGames,
   onImageUpload,
   showGrid, setShowGrid,
-  snapToGrid, setSnapToGrid
+  snapToGrid, setSnapToGrid,
+  onReaction
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
+  const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
   const fileInputRef = React.useRef(null);
   
   const colors = [
@@ -177,6 +179,41 @@ const Toolbar = ({
         <button onClick={() => setSnapToGrid(!snapToGrid)} className={`size-10 flex items-center justify-center rounded-full transition-all ${snapToGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Snap to Grid">
           <Wand2 className={`size-4 ${snapToGrid ? 'animate-pulse text-indigo-400' : ''}`} />
         </button>
+        
+        {/* Reaction Wheel */}
+        <div className="relative">
+          <button 
+            onClick={() => setIsReactionWheelOpen(!isReactionWheelOpen)}
+            className={`size-10 flex items-center justify-center rounded-full transition-all ${isReactionWheelOpen ? "bg-indigo-500 text-white" : "text-slate-400 hover:text-white"}`} 
+            title="React"
+          >
+            <Sparkles className="size-4" />
+          </button>
+          
+          {isReactionWheelOpen && (
+            <>
+              <div 
+                className="fixed inset-0 z-[-1]" 
+                onClick={() => setIsReactionWheelOpen(false)} 
+              />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 p-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl flex gap-2 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-2xl z-[70]">
+                {['❤️', '🔥', '👍', '😂', '😮', '🎉'].map(emoji => (
+                  <button
+                    key={emoji}
+                    onClick={() => {
+                      onReaction(emoji);
+                      setIsReactionWheelOpen(false);
+                    }}
+                    className="size-10 flex items-center justify-center rounded-xl hover:bg-white/10 hover:scale-125 transition-all text-xl"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
         <button onClick={onClear} className="size-10 flex items-center justify-center rounded-full text-slate-400 hover:text-red-400 transition-all" title="Clear All">
           <Trash2 className="size-4" />
         </button>
