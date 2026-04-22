@@ -221,20 +221,17 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       const lastId = undoStack[undoStack.length - 1];
       
       dispatch({ type: 'UNDO' });
-      
-      if (socket) {
-        socket.emit('delete-stroke', { roomId, canvasId, strokeId: lastId });
-      }
+      return lastId;
     },
     redo: () => {
       if (redoStack.length === 0) return;
       const strokeToRedo = redoStack[redoStack.length - 1];
       
       dispatch({ type: 'REDO' });
-      
-      if (socket) {
-        socket.emit('draw', { roomId, canvasId, stroke: strokeToRedo });
-      }
+      return strokeToRedo;
+    },
+    addStroke: (stroke) => {
+      dispatch({ type: 'ADD_STROKE', stroke });
     },
     getPanOffset: () => panOffset,
     canUndo: undoStack.length > 0,

@@ -428,6 +428,7 @@ const CanvasRoom = () => {
       // 3. Add to Canvas
       const img = new Image();
       img.src = result.url;
+      img.crossOrigin = "anonymous"; // Handle CORS for canvas operations
       img.onload = () => {
         // Calculate initial size (max 400px width/height)
         let w = img.width;
@@ -450,13 +451,18 @@ const CanvasRoom = () => {
           tool: 'image'
         };
         
+        // Dispatch locally for instant feedback
+        if (canvasRef.current) {
+          canvasRef.current.addStroke(imageStroke);
+        }
+
         socket.emit('draw', { roomId, canvasId: activeCanvas?._id, stroke: imageStroke });
-        setNotification('Image uploaded successfully!');
+        setNotification('Image added to canvas!');
         setTimeout(() => setNotification(null), 2000);
       };
     } catch (error) {
-      console.error('ImageKit upload error:', error);
-      setNotification('Failed to upload image');
+      console.error('Upload error:', error);
+      setNotification(`Upload failed: ${error.message}`);
       setTimeout(() => setNotification(null), 3000);
     }
   };
