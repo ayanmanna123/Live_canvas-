@@ -46,6 +46,8 @@ const CanvasRoom = () => {
   const [moviePlaying, setMoviePlaying] = useState(false);
   const [movieTime, setMovieTime] = useState(0);
   const [movieMasterId, setMovieMasterId] = useState(null);
+  const [showGrid, setShowGrid] = useState(false);
+  const [snapToGrid, setSnapToGrid] = useState(false);
   
   // Canvas Management State
   const [activeCanvas, setActiveCanvas] = useState(null);
@@ -535,6 +537,10 @@ const CanvasRoom = () => {
         isWatchPartyOpen={isWatchPartyOpen}
         onOpenGames={() => navigate('/games', { state: { roomId, userName } })}
         onImageUpload={handleImageUpload}
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
+        snapToGrid={snapToGrid}
+        setSnapToGrid={setSnapToGrid}
       />
       
       {inCall && localStream && (
@@ -689,6 +695,8 @@ const CanvasRoom = () => {
           onPan={setPanOffset}
           showRopes={showRopes}
           autoMode={autoMode}
+          showGrid={showGrid}
+          snapToGrid={snapToGrid}
         />
       </div>
 

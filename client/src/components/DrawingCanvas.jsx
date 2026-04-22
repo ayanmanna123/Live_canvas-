@@ -103,7 +103,7 @@ const canvasReducer = (state, action) => {
   }
 };
 
-const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, size, tool, onPan, showRopes, autoMode }, ref) => {
+const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, size, tool, onPan, showRopes, autoMode, showGrid, snapToGrid }, ref) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -130,6 +130,12 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
   const currentStroke = useRef(null);
   const deletedStrokesThisSession = useRef(new Set());
   const { socket } = useSocket();
+  const gridSize = 40;
+
+  const snapValue = (val) => {
+    if (!snapToGrid) return val;
+    return Math.round(val / gridSize) * gridSize;
+  };
 
   const getBoundingBox = (stroke) => {
     if (!stroke || !stroke.points || stroke.points.length === 0) return null;
@@ -328,6 +334,37 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     }
   };
 
+  const drawGrid = (ctx) => {
+    if (!showGrid) return;
+    
+    const canvas = canvasRef.current;
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1;
+
+    const offsetX = panOffset.x % gridSize;
+    const offsetY = panOffset.y % gridSize;
+
+    // Vertical lines
+    for (let x = offsetX; x <= width; x += gridSize) {
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+    }
+
+    // Horizontal lines
+    for (let y = offsetY; y <= height; y += gridSize) {
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+    }
+
+    ctx.stroke();
+    ctx.restore();
+  };
+
   const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = contextRef.current;
@@ -336,6 +373,9 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     const { width, height } = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, width, height);
     
+    // Draw Grid first (fixed background)
+    drawGrid(ctx);
+
     ctx.save();
     ctx.translate(panOffset.x, panOffset.y);
     
@@ -430,7 +470,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     });
     
     ctx.restore();
-  }, [strokes, panOffset]);
+  }, [strokes, panOffset, showGrid, showRopes]);
   
   // Shape Recognition Logic
   const getSqDist = (p1, p2) => (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
@@ -710,7 +750,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       id: nanoid(),
       userId: socket.id, // Track local user
       type: 'freehand',
-      points: [{ x: worldX, y: worldY }],
+      points: [{ x: snapValue(worldX), y: snapValue(worldY) }],
       color,
       size,
       tool
@@ -756,7 +796,10 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       const box = getBoundingBox(initialStroke);
 
       if (transformMode === 'move') {
-        updatedStroke.points = initialStroke.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+        updatedStroke.points = initialStroke.points.map(p => ({ 
+          x: snapValue(p.x + dx), 
+          y: snapValue(p.y + dy) 
+        }));
       } else {
         // Resizing logic
         let anchorX, anchorY, sx, sy;
@@ -781,16 +824,17 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
         }
 
         if (initialStroke.type === 'image') {
-          updatedStroke.imageWidth = Math.max(minSize, initialStroke.imageWidth * sx);
-          updatedStroke.imageHeight = Math.max(minSize, initialStroke.imageHeight * sy);
+          updatedStroke.imageWidth = snapValue(Math.max(minSize, initialStroke.imageWidth * sx));
+          updatedStroke.imageHeight = snapValue(Math.max(minSize, initialStroke.imageHeight * sy));
           
           // Adjust points based on anchor
-          if (transformMode.includes('w')) updatedStroke.points = [{ x: initialStroke.points[0].x + dx, y: updatedStroke.points[0].y }];
-          if (transformMode.includes('n')) updatedStroke.points = [{ x: updatedStroke.points[0].x, y: initialStroke.points[0].y + dy }];
+          const newX = snapValue(transformMode.includes('w') ? initialStroke.points[0].x + dx : initialStroke.points[0].x);
+          const newY = snapValue(transformMode.includes('n') ? initialStroke.points[0].y + dy : initialStroke.points[0].y);
+          updatedStroke.points = [{ x: newX, y: newY }];
         } else {
           updatedStroke.points = initialStroke.points.map(p => ({
-            x: anchorX + (p.x - anchorX) * sx,
-            y: anchorY + (p.y - anchorY) * sy
+            x: snapValue(anchorX + (p.x - anchorX) * sx),
+            y: snapValue(anchorY + (p.y - anchorY) * sy)
           }));
           
           if (updatedStroke.type === 'text') {

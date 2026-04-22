@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Layout } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -26,7 +26,9 @@ const Toolbar = ({
   onToggleWatchParty,
   isWatchPartyOpen,
   onOpenGames,
-  onImageUpload
+  onImageUpload,
+  showGrid, setShowGrid,
+  snapToGrid, setSnapToGrid
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const fileInputRef = React.useRef(null);
@@ -168,6 +170,12 @@ const Toolbar = ({
         </button>
         <button onClick={onOpenGames} className="size-10 flex items-center justify-center rounded-full text-slate-400 hover:text-white transition-all" title="Games">
           <Gamepad2 className="size-4" />
+        </button>
+        <button onClick={() => setShowGrid(!showGrid)} className={`size-10 flex items-center justify-center rounded-full transition-all ${showGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Toggle Grid">
+          <Layout className="size-4" />
+        </button>
+        <button onClick={() => setSnapToGrid(!snapToGrid)} className={`size-10 flex items-center justify-center rounded-full transition-all ${snapToGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Snap to Grid">
+          <Wand2 className={`size-4 ${snapToGrid ? 'animate-pulse text-indigo-400' : ''}`} />
         </button>
         <button onClick={onClear} className="size-10 flex items-center justify-center rounded-full text-slate-400 hover:text-red-400 transition-all" title="Clear All">
           <Trash2 className="size-4" />
