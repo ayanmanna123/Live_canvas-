@@ -77,7 +77,7 @@ const canvasReducer = (state, action) => {
   }
 };
 
-const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, showRopes, autoMode }, ref) => {
+const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, size, tool, onPan, showRopes, autoMode }, ref) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -115,7 +115,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
       dispatch({ type: 'UNDO' });
       
       if (socket) {
-        socket.emit('delete-stroke', { roomId, strokeId: lastId });
+        socket.emit('delete-stroke', { roomId, canvasId, strokeId: lastId });
       }
     },
     redo: () => {
@@ -125,7 +125,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
       dispatch({ type: 'REDO' });
       
       if (socket) {
-        socket.emit('draw', { roomId, stroke: strokeToRedo });
+        socket.emit('draw', { roomId, canvasId, stroke: strokeToRedo });
       }
     },
     getPanOffset: () => panOffset,
@@ -435,7 +435,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
       if (collided) {
         deletedStrokesThisSession.current.add(stroke.id);
         dispatch({ type: 'DELETE_STROKE', strokeId: stroke.id });
-        socket.emit('delete-stroke', { roomId, strokeId: stroke.id });
+        socket.emit('delete-stroke', { roomId, canvasId, strokeId: stroke.id });
       }
     });
   };
@@ -612,7 +612,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
         points: finalPoints
       };
       dispatch({ type: 'ADD_STROKE', stroke: finalStroke });
-      socket.emit('draw', { roomId, stroke: finalStroke });
+      socket.emit('draw', { roomId, canvasId, stroke: finalStroke });
     }
     currentStroke.current = null;
   };
@@ -633,7 +633,7 @@ const DrawingCanvas = forwardRef(({ roomId, userName, color, size, tool, onPan, 
           tool: 'text'
         };
         dispatch({ type: 'ADD_STROKE', stroke: textStroke });
-        socket.emit('draw', { roomId, stroke: textStroke });
+        socket.emit('draw', { roomId, canvasId, stroke: textStroke });
         setTextInput(null);
       } else if (e.type === 'blur') {
         // Only close empty input on blur if it wasn't just opened

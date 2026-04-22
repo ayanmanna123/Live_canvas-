@@ -9,6 +9,7 @@ import Stroke from './models/Stroke.js';
 import UserHistory from './models/UserHistory.js';
 import PushSubscription from './models/PushSubscription.js';
 import GameScore from './models/GameScore.js';
+import Canvas from './models/Canvas.js';
 import { sendPushNotification } from './utils/pushNotification.js';
 
 dotenv.config();
@@ -70,10 +71,22 @@ io.on('connection', (socket) => {
     // Send existing strokes, chat history, and user history to the new user (only if DB is connected)
     if (mongoose.connection.readyState === 1) {
       try {
-        const [strokes, messages, history] = await Promise.all([
-          Stroke.find({ roomId }).sort({ createdAt: 1 }),
+        // Find or create default canvas for this room
+        let activeCanvas = await Canvas.findOne({ roomId }).sort({ createdAt: 1 });
+        if (!activeCanvas) {
+          activeCanvas = new Canvas({
+            name: 'Default Canvas',
+            roomId,
+            createdBy: 'System'
+          });
+          await activeCanvas.save();
+        }
+
+        const [strokes, messages, history, allCanvases] = await Promise.all([
+          Stroke.find({ roomId, canvasId: activeCanvas._id }).sort({ createdAt: 1 }),
           Message.find({ roomId }).sort({ createdAt: 1 }).limit(100),
-          UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50)
+          UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50),
+          Canvas.find({ roomId }).sort({ createdAt: -1 })
         ]);
         
         // Record this join event
@@ -85,6 +98,8 @@ io.on('connection', (socket) => {
         });
         await newHistoryEntry.save();
 
+        socket.emit('active-canvas-update', activeCanvas);
+        socket.emit('canvas-list-update', allCanvases);
         socket.emit('canvas-history', strokes);
         socket.emit('chat-history', messages);
         socket.emit('movie-update-remote', rooms.get(roomId).movie);
@@ -93,6 +108,7 @@ io.on('connection', (socket) => {
         console.error('Error fetching room history:', error);
       }
     }
+
 
     // Notify others
     const room = rooms.get(roomId);
@@ -104,11 +120,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('draw', async (data) => {
-    const { roomId, stroke } = data;
+    const { roomId, canvasId, stroke } = data;
     if (!roomId || !stroke) return;
     
     // Broadcast to others immediately for low latency
-    const strokeWithUser = { ...stroke, userId: socket.id };
+    const strokeWithUser = { ...stroke, userId: socket.id, canvasId };
     socket.to(roomId).emit('draw-remote', strokeWithUser);
 
     // Save to database (only if DB is connected)
@@ -116,6 +132,7 @@ io.on('connection', (socket) => {
       try {
         const newStroke = new Stroke({
           roomId,
+          canvasId,
           userId: socket.id,
           ...stroke
         });
@@ -126,14 +143,55 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('clear-canvas', async (roomId) => {
-    if (!roomId) return;
+  socket.on('create-canvas', async ({ roomId, name, userName }) => {
+    if (!roomId || !name) return;
+
+    try {
+      const newCanvas = new Canvas({
+        name,
+        roomId,
+        createdBy: userName
+      });
+      await newCanvas.save();
+
+      // Notify everyone in the room about the new canvas
+      const allCanvases = await Canvas.find({ roomId }).sort({ createdAt: -1 });
+      io.to(roomId).emit('canvas-list-update', allCanvases);
+      
+      // Switch everyone to the new canvas
+      io.to(roomId).emit('active-canvas-update', newCanvas);
+      io.to(roomId).emit('canvas-history', []); // New canvas is empty
+    } catch (error) {
+      console.error('Error creating canvas:', error);
+    }
+  });
+
+  socket.on('switch-canvas', async ({ roomId, canvasId }) => {
+    if (!roomId || !canvasId) return;
+
+    try {
+      const [canvas, strokes] = await Promise.all([
+        Canvas.findById(canvasId),
+        Stroke.find({ roomId, canvasId }).sort({ createdAt: 1 })
+      ]);
+
+      if (canvas) {
+        io.to(roomId).emit('active-canvas-update', canvas);
+        io.to(roomId).emit('canvas-history', strokes);
+      }
+    } catch (error) {
+      console.error('Error switching canvas:', error);
+    }
+  });
+
+  socket.on('clear-canvas', async ({ roomId, canvasId }) => {
+    if (!roomId || !canvasId) return;
     
     try {
       if (mongoose.connection.readyState === 1) {
-        await Stroke.deleteMany({ roomId });
+        await Stroke.deleteMany({ roomId, canvasId });
       }
-      io.to(roomId).emit('clear-canvas-remote');
+      io.to(roomId).emit('clear-canvas-remote', { canvasId });
     } catch (error) {
       console.error('Error clearing canvas:', error);
     }

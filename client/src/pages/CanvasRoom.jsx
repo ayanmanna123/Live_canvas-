@@ -5,7 +5,9 @@ import DrawingCanvas from '../components/DrawingCanvas';
 import Toolbar from '../components/Toolbar';
 import Chat from '../components/Chat';
 import UserHistoryPanel from '../components/UserHistory';
-import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video } from 'lucide-react';
+import CanvasListPanel from '../components/CanvasListPanel';
+import NewCanvasModal from '../components/NewCanvasModal';
+import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video, Plus, Layout, History, Sparkles } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Peer from 'simple-peer';
 import VideoCall from '../components/VideoCall';
@@ -44,6 +46,13 @@ const CanvasRoom = () => {
   const [moviePlaying, setMoviePlaying] = useState(false);
   const [movieTime, setMovieTime] = useState(0);
   const [movieMasterId, setMovieMasterId] = useState(null);
+  
+  // Canvas Management State
+  const [activeCanvas, setActiveCanvas] = useState(null);
+  const [canvasList, setCanvasList] = useState([]);
+  const [isCanvasListOpen, setIsCanvasListOpen] = useState(false);
+  const [isNewCanvasModalOpen, setIsNewCanvasModalOpen] = useState(false);
+  
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
 
@@ -165,6 +174,19 @@ const CanvasRoom = () => {
 
     socket.on('sync-to-master', ({ currentTime }) => {
       setMovieTime(currentTime);
+    });
+
+    socket.on('active-canvas-update', (canvas) => {
+      setActiveCanvas(canvas);
+      if (canvas.bgColor) setBgColor(canvas.bgColor);
+    });
+
+    socket.on('canvas-list-update', (list) => {
+      setCanvasList(list);
+    });
+
+    socket.on('clear-canvas-remote', ({ canvasId }) => {
+      // Handled by DrawingCanvas typically, but we can sync state here if needed
     });
 
     return () => {
@@ -343,8 +365,16 @@ const CanvasRoom = () => {
 
   const handleClearCanvas = () => {
     if (window.confirm('Are you sure you want to clear the entire canvas?')) {
-      socket.emit('clear-canvas', roomId);
+      socket.emit('clear-canvas', { roomId, canvasId: activeCanvas?._id });
     }
+  };
+
+  const handleCreateCanvas = (name) => {
+    socket.emit('create-canvas', { roomId, name, userName });
+  };
+
+  const handleSwitchCanvas = (canvasId) => {
+    socket.emit('switch-canvas', { roomId, canvasId });
   };
 
   const handleBgChange = (newColor) => {
@@ -517,6 +547,7 @@ const CanvasRoom = () => {
       <DrawingCanvas 
         ref={canvasRef}
         roomId={roomId} 
+        canvasId={activeCanvas?._id}
         userName={userName}
         color={color}
         bgColor={bgColor}
@@ -525,6 +556,61 @@ const CanvasRoom = () => {
         onPan={setPanOffset}
         showRopes={showRopes}
         autoMode={autoMode}
+      />
+
+      {/* Top Navigation Bar */}
+      <div className="absolute top-0 left-0 right-0 h-20 z-40 flex items-center justify-between px-6 pointer-events-none">
+        <div className="flex items-center gap-3 pointer-events-auto">
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 px-5 py-2.5 rounded-2xl flex items-center gap-4 shadow-2xl">
+            <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-sm font-black text-white leading-tight tracking-wide">
+                {activeCanvas?.name || 'Untitled Canvas'}
+              </h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em]">Live Session • {roomId}</p>
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => setIsCanvasListOpen(true)}
+            className="p-3.5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 text-slate-300 hover:text-white hover:bg-indigo-600/20 hover:border-indigo-500/30 transition-all shadow-2xl group active:scale-95"
+            title="All Canvases"
+          >
+            <History className="h-5 w-5 group-hover:rotate-[-10deg] transition-transform" />
+          </button>
+          
+          <button 
+            onClick={() => setIsNewCanvasModalOpen(true)}
+            className="px-5 py-3 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-indigo-600/40 flex items-center gap-2.5 border border-indigo-400/20"
+          >
+            <Plus className="h-4 w-4 stroke-[3px]" />
+            <span>New Canvas</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Canvas Management Overlays */}
+      <CanvasListPanel 
+        isOpen={isCanvasListOpen}
+        onClose={() => setIsCanvasListOpen(false)}
+        canvases={canvasList}
+        activeCanvasId={activeCanvas?._id}
+        onSwitch={handleSwitchCanvas}
+        onNew={() => {
+          setIsCanvasListOpen(false);
+          setIsNewCanvasModalOpen(true);
+        }}
+      />
+
+      <NewCanvasModal 
+        isOpen={isNewCanvasModalOpen}
+        onClose={() => setIsNewCanvasModalOpen(false)}
+        onCreate={handleCreateCanvas}
       />
 
       {/* Remote Cursors Presence Layer */}

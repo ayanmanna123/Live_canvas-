@@ -12,6 +12,10 @@ const strokeSchema = new mongoose.Schema({
     unique: true,
     index: true
   },
+  canvasId: {
+    type: String,
+    index: true
+  },
   userId: {
     type: String,
     required: true
