@@ -296,6 +296,12 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       case 'dotted':
         ctx.setLineDash([1, stroke.size * 2]);
         break;
+      case 'laser':
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#ff4444';
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 4;
+        break;
       default:
         break;
     }
@@ -553,6 +559,13 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
 
     socket.on('draw-remote', (stroke) => {
       dispatch({ type: 'REMOTE_STROKE', stroke });
+      
+      // If it's a laser stroke, set a local timeout to remove it
+      if (stroke.tool === 'laser') {
+        setTimeout(() => {
+          dispatch({ type: 'DELETE_STROKE', strokeId: stroke.id });
+        }, 2000);
+      }
     });
 
     socket.on('canvas-history', (history) => {
@@ -816,6 +829,14 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       };
       dispatch({ type: 'ADD_STROKE', stroke: finalStroke });
       socket.emit('draw', { roomId, canvasId, stroke: finalStroke });
+
+      // Laser Pointer Auto-Fade
+      if (tool === 'laser') {
+        setTimeout(() => {
+          dispatch({ type: 'DELETE_STROKE', strokeId: finalStroke.id });
+          socket.emit('delete-stroke', { roomId, canvasId, strokeId: finalStroke.id });
+        }, 2000);
+      }
     }
     currentStroke.current = null;
   };

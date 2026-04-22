@@ -38,6 +38,7 @@ const Toolbar = ({
 
   const brushes = [
     { id: 'select', icon: MousePointer2, label: 'Select' },
+    { id: 'laser', icon: Wand2, label: 'Laser' },
     { id: 'pencil', icon: Pencil, label: 'Pencil' },
     { id: 'highlighter', icon: Highlighter, label: 'High' },
     { id: 'neon', icon: Sparkles, label: 'Neon' },
