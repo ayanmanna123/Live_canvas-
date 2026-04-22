@@ -46,6 +46,15 @@ const strokeSchema = new mongoose.Schema({
     type: String,
     default: 'pencil'
   },
+  imageUrl: {
+    type: String
+  },
+  imageWidth: {
+    type: Number
+  },
+  imageHeight: {
+    type: Number
+  },
   createdAt: {
     type: Date,
     default: Date.now,

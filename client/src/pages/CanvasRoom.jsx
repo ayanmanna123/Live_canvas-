@@ -402,8 +402,78 @@ const CanvasRoom = () => {
     canvasRef.current?.download(`${canvasName}-${new Date().getTime()}.png`);
   };
 
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    
+    setNotification('Uploading image...');
+    
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const uploadResponse = await fetch(`${backendUrl}/api/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('Upload API error:', errorText);
+        throw new Error(`Upload failed: ${errorText}`);
+      }
+      
+      const result = await uploadResponse.json();
+      
+      // 3. Add to Canvas
+      const img = new Image();
+      img.src = result.url;
+      img.onload = () => {
+        // Calculate initial size (max 400px width/height)
+        let w = img.width;
+        let h = img.height;
+        const max = 400;
+        if (w > max || h > max) {
+          const ratio = Math.min(max / w, max / h);
+          w *= ratio;
+          h *= ratio;
+        }
+
+        const imageStroke = {
+          id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userId: socket.id,
+          type: 'image',
+          imageUrl: result.url,
+          points: [{ x: 100 - panOffset.x, y: 100 - panOffset.y }], // Place in viewport
+          imageWidth: w,
+          imageHeight: h,
+          tool: 'image'
+        };
+        
+        socket.emit('draw', { roomId, canvasId: activeCanvas?._id, stroke: imageStroke });
+        setNotification('Image uploaded successfully!');
+        setTimeout(() => setNotification(null), 2000);
+      };
+    } catch (error) {
+      console.error('ImageKit upload error:', error);
+      setNotification('Failed to upload image');
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
   return (
-    <div className="relative h-screen w-screen overflow-hidden" style={{ backgroundColor: bgColor }}>
+    <div 
+      className="relative h-screen w-screen overflow-hidden" 
+      style={{ backgroundColor: bgColor }}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+          handleImageUpload(file);
+        }
+      }}
+    >
       {/* Connectivity Status */}
       {!isConnected && (
         <div className="absolute top-4 left-4 z-[100] flex items-center gap-2 rounded-full bg-red-500/20 px-3 py-1 border border-red-500/50 backdrop-blur-md">
@@ -458,6 +528,7 @@ const CanvasRoom = () => {
         onToggleWatchParty={() => setIsWatchPartyOpen(!isWatchPartyOpen)}
         isWatchPartyOpen={isWatchPartyOpen}
         onOpenGames={() => navigate('/games', { state: { roomId, userName } })}
+        onImageUpload={handleImageUpload}
       />
       
       {inCall && localStream && (

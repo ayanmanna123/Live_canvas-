@@ -125,6 +125,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
   const [initialStroke, setInitialStroke] = useState(null);
   const [transformMode, setTransformMode] = useState(null); // 'move' | 'resize-nw' | 'resize-ne' | 'resize-sw' | 'resize-se'
   const [editMenu, setEditMenu] = useState(null); // { x, y, strokeId }
+  const imageCache = useRef(new Map()); // url -> HTMLImageElement
 
   const currentStroke = useRef(null);
   const deletedStrokesThisSession = useRef(new Set());
@@ -132,6 +133,22 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
 
   const getBoundingBox = (stroke) => {
     if (!stroke || !stroke.points || stroke.points.length === 0) return null;
+    
+    if (stroke.type === 'image') {
+      const x = stroke.points[0].x;
+      const y = stroke.points[0].y;
+      return {
+        x,
+        y,
+        minX: x,
+        minY: y,
+        maxX: x + (stroke.imageWidth || 0),
+        maxY: y + (stroke.imageHeight || 0),
+        width: stroke.imageWidth || 0,
+        height: stroke.imageHeight || 0
+      };
+    }
+
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     stroke.points.forEach(p => {
       minX = Math.min(minX, p.x);
@@ -152,6 +169,13 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
   };
 
   const isPointInStroke = (x, y, stroke) => {
+    if (stroke.type === 'image') {
+      const ix = stroke.points[0].x;
+      const iy = stroke.points[0].y;
+      const buffer = 10;
+      return x >= ix - buffer && x <= ix + stroke.imageWidth + buffer &&
+             y >= iy - buffer && y <= iy + stroke.imageHeight + buffer;
+    }
     if (stroke.type === 'text') {
       const box = getBoundingBox(stroke);
       return x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height;
@@ -375,7 +399,23 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
         return;
       }
 
-      if (stroke.points.length < 2) return;
+      if (stroke.type === 'image') {
+      if (!stroke.imageUrl) return;
+      let img = imageCache.current.get(stroke.imageUrl);
+      if (!img) {
+        img = new Image();
+        img.src = stroke.imageUrl;
+        img.onload = () => {
+          imageCache.current.set(stroke.imageUrl, img);
+          redrawCanvas(); // Re-render once loaded
+        };
+        return; // Skip drawing this frame
+      }
+      ctx.drawImage(img, stroke.points[0].x, stroke.points[0].y, stroke.imageWidth, stroke.imageHeight);
+      return;
+    }
+
+    if (stroke.points.length < 2) return;
       
       ctx.save();
       ctx.beginPath();
@@ -577,7 +617,10 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
         size: s.size,
         tool: s.tool,
         type: s.type,
-        content: s.content
+        content: s.content,
+        imageUrl: s.imageUrl,
+        imageWidth: s.imageWidth,
+        imageHeight: s.imageHeight
       }));
       dispatch({ type: 'SET_HISTORY', history: formattedHistory });
     });
@@ -740,15 +783,22 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
           sy = Math.max(minSize, box.height - dy) / box.height;
         }
 
-        updatedStroke.points = initialStroke.points.map(p => ({
-          x: anchorX + (p.x - anchorX) * sx,
-          y: anchorY + (p.y - anchorY) * sy
-        }));
-        
-        // For text, also scale font size if it's uniform? No, just scale points for now.
-        // Actually, text size should be updated.
-        if (updatedStroke.type === 'text') {
-           updatedStroke.size = initialStroke.size * ((sx + sy) / 2);
+        if (initialStroke.type === 'image') {
+          updatedStroke.imageWidth = Math.max(minSize, initialStroke.imageWidth * sx);
+          updatedStroke.imageHeight = Math.max(minSize, initialStroke.imageHeight * sy);
+          
+          // Adjust points based on anchor
+          if (transformMode.includes('w')) updatedStroke.points = [{ x: initialStroke.points[0].x + dx, y: updatedStroke.points[0].y }];
+          if (transformMode.includes('n')) updatedStroke.points = [{ x: updatedStroke.points[0].x, y: initialStroke.points[0].y + dy }];
+        } else {
+          updatedStroke.points = initialStroke.points.map(p => ({
+            x: anchorX + (p.x - anchorX) * sx,
+            y: anchorY + (p.y - anchorY) * sy
+          }));
+          
+          if (updatedStroke.type === 'text') {
+            updatedStroke.size = initialStroke.size * ((sx + sy) / 2);
+          }
         }
       }
       

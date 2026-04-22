@@ -11,6 +11,8 @@ import PushSubscription from './models/PushSubscription.js';
 import GameScore from './models/GameScore.js';
 import Canvas from './models/Canvas.js';
 import { sendPushNotification } from './utils/pushNotification.js';
+import ImageKit from 'imagekit';
+import multer from 'multer';
 
 dotenv.config();
 
@@ -31,6 +33,38 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// ImageKit Setup
+const imagekit = new ImageKit({
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+});
+
+// Multer Setup
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+app.post('/api/upload', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const response = await imagekit.upload({
+      file: req.file.buffer, // Directly upload buffer
+      fileName: req.file.originalname.replace(/\s+/g, '_'),
+      folder: '/live-canvas'
+    });
+
+    res.json({ url: response.url });
+  } catch (error) {
+    console.error('ImageKit upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/live-canvas';

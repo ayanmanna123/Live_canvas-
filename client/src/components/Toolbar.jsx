@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film, Gamepad2, MousePointer2 } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -25,9 +25,11 @@ const Toolbar = ({
   setAutoMode,
   onToggleWatchParty,
   isWatchPartyOpen,
-  onOpenGames
+  onOpenGames,
+  onImageUpload
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
+  const fileInputRef = React.useRef(null);
   
   const colors = [
     '#ffffff', '#6750A4', '#1C1B1F', '#ef4444', '#f97316', 
@@ -71,6 +73,25 @@ const Toolbar = ({
               </button>
             );
           })}
+          
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="group relative size-11 flex items-center justify-center rounded-full text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-300"
+            title="Upload Image"
+          >
+            <ImageIcon className="size-5" />
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onImageUpload(file);
+                e.target.value = ''; // Reset for same file selection
+              }}
+            />
+          </button>
         </div>
 
         {/* Color Palette */}
