@@ -7,7 +7,7 @@ import Chat from '../components/Chat';
 import UserHistoryPanel from '../components/UserHistory';
 import CanvasListPanel from '../components/CanvasListPanel';
 import NewCanvasModal from '../components/NewCanvasModal';
-import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video, Plus, Layout, History, Sparkles } from 'lucide-react';
+import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video, Plus, Layout, History, Sparkles, Camera } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Peer from 'simple-peer';
 import VideoCall from '../components/VideoCall';
@@ -397,6 +397,11 @@ const CanvasRoom = () => {
     setTimeout(() => setNotification(null), 2000);
   };
 
+  const handleCapture = () => {
+    const canvasName = activeCanvas?.name || 'canvas';
+    canvasRef.current?.download(`${canvasName}-${new Date().getTime()}.png`);
+  };
+
   return (
     <div className="relative h-screen w-screen overflow-hidden" style={{ backgroundColor: bgColor }}>
       {/* Connectivity Status */}
@@ -559,38 +564,47 @@ const CanvasRoom = () => {
       />
 
       {/* Top Navigation Bar */}
-      <div className="absolute top-0 left-0 right-0 h-20 z-40 flex items-center justify-between px-6 pointer-events-none">
-        <div className="flex items-center gap-3 pointer-events-auto">
-          <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 px-5 py-2.5 rounded-2xl flex items-center gap-4 shadow-2xl">
-            <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Sparkles className="h-6 w-6 text-white" />
+      <div className="fixed top-0 left-0 right-0 h-16 z-[60] flex items-center px-6 bg-slate-900/50 backdrop-blur-xl border-b border-white/5 pointer-events-none">
+        <div className="flex items-center gap-6 pointer-events-auto w-full">
+          {/* Logo & Name */}
+          <div className="flex items-center gap-3 pr-6 border-r border-white/10">
+            <div className="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
               <h1 className="text-sm font-black text-white leading-tight tracking-wide">
                 {activeCanvas?.name || 'Untitled Canvas'}
               </h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em]">Live Session • {roomId}</p>
-              </div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em]">Room: {roomId}</p>
             </div>
           </div>
           
-          <button 
-            onClick={() => setIsCanvasListOpen(true)}
-            className="p-3.5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/10 text-slate-300 hover:text-white hover:bg-indigo-600/20 hover:border-indigo-500/30 transition-all shadow-2xl group active:scale-95"
-            title="All Canvases"
-          >
-            <History className="h-5 w-5 group-hover:rotate-[-10deg] transition-transform" />
-          </button>
-          
-          <button 
-            onClick={() => setIsNewCanvasModalOpen(true)}
-            className="px-5 py-3 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-indigo-600/40 flex items-center gap-2.5 border border-indigo-400/20"
-          >
-            <Plus className="h-4 w-4 stroke-[3px]" />
-            <span>New Canvas</span>
-          </button>
+          {/* Action Buttons - Explicitly on the left */}
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setIsCanvasListOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
+            >
+              <History className="h-4 w-4" />
+              <span className="text-xs font-bold">Canvases</span>
+            </button>
+            
+            <button 
+              onClick={handleCapture}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all group"
+            >
+              <Camera className="h-4 w-4" />
+              <span className="text-xs font-bold">Capture</span>
+            </button>
+
+            <button 
+              onClick={() => setIsNewCanvasModalOpen(true)}
+              className="ml-2 px-4 py-2 rounded-xl bg-indigo-600 text-white font-black text-[11px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+            >
+              <Plus className="h-3.5 w-3.5 stroke-[3px]" />
+              <span>New Canvas</span>
+            </button>
+          </div>
         </div>
       </div>
 

@@ -62,7 +62,7 @@ const Toolbar = ({
 
       {/* Top Center Toolbar - Brushes & Colors */}
       <div 
-        className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out sm:block ${isOpen ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none sm:translate-y-0 sm:opacity-100 sm:pointer-events-auto'}`}
+        className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 transition-all duration-500 ease-out sm:block ${isOpen ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none sm:translate-y-0 sm:opacity-100 sm:pointer-events-auto'}`}
       >
         <div className="flex items-center gap-4 p-2 sm:px-6 sm:py-3 rounded-[2rem] bg-md-surface-container/90 backdrop-blur-2xl border border-md-outline/10 md-shadow-2">
           {/* Tool Selection */}
@@ -115,9 +115,9 @@ const Toolbar = ({
         </div>
       </div>
 
-      {/* Bottom Right Toolbar - Actions & Size */}
+      {/* Right Sidebar Toolbar - Actions & Size */}
       <div 
-        className={`fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 transition-all duration-500 ease-out sm:block ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none sm:translate-y-0 sm:opacity-100 sm:pointer-events-auto'}`}
+        className={`fixed top-24 right-6 sm:right-8 z-50 transition-all duration-500 ease-out sm:block ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none sm:translate-y-0 sm:opacity-100 sm:pointer-events-auto'}`}
         style={{ 
           transform: isChatOpen && window.innerWidth >= 640 
             ? 'translateX(-340px)' 

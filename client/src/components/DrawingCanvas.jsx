@@ -77,7 +77,7 @@ const canvasReducer = (state, action) => {
   }
 };
 
-const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, size, tool, onPan, showRopes, autoMode }, ref) => {
+const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, size, tool, onPan, showRopes, autoMode }, ref) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -130,7 +130,30 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, size, too
     },
     getPanOffset: () => panOffset,
     canUndo: undoStack.length > 0,
-    canRedo: redoStack.length > 0
+    canRedo: redoStack.length > 0,
+    download: (fileName = 'canvas-capture.png') => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      // Create a temporary canvas to include the background
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+
+      // Fill background
+      tempCtx.fillStyle = bgColor || '#0f172a';
+      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Draw original canvas on top
+      tempCtx.drawImage(canvas, 0, 0);
+
+      // Trigger download
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = tempCanvas.toDataURL('image/png');
+      link.click();
+    }
   }));
 
   // Initialize Canvas
