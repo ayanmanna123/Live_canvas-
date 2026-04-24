@@ -33,7 +33,54 @@ const Toolbar = ({
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = React.useRef(null);
+
+  const handleAIGenerate = async () => {
+    if (!aiPrompt.trim()) return;
+    setIsGenerating(true);
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendUrl}/api/ai/generate-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt })
+      });
+
+      if (!response.ok) throw new Error('AI generation failed');
+      const data = await response.json();
+      
+      // Use the same image placement logic as manual upload
+      // Create a dummy file object or just pass the URL if we modify handleImageUpload
+      // Actually, it's easier to just pass the URL back to CanvasRoom
+      if (onImageUpload && data.url) {
+        // We need to fetch the image to get dimensions or just use a default
+        const img = new Image();
+        img.src = data.url;
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          let w = img.width;
+          let h = img.height;
+          const max = 400;
+          if (w > max || h > max) {
+            const ratio = Math.min(max / w, max / h);
+            w *= ratio;
+            h *= ratio;
+          }
+          onImageUpload(null, { url: data.url, width: w, height: h });
+        };
+      }
+      setIsAIModalOpen(false);
+      setAiPrompt('');
+    } catch (error) {
+      console.error(error);
+      alert('AI Generation failed. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
   
   const colors = [
     '#ffffff', '#6750A4', '#1C1B1F', '#ef4444', '#f97316', 
@@ -209,6 +256,59 @@ const Toolbar = ({
                     {emoji}
                   </button>
                 ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* AI Image Generation */}
+        <div className="relative">
+          <button 
+            onClick={() => setIsAIModalOpen(!isAIModalOpen)}
+            className={`size-10 flex items-center justify-center rounded-full transition-all ${isAIModalOpen ? "bg-purple-600 text-white" : "text-slate-400 hover:text-purple-400"}`} 
+            title="AI Image Generator"
+          >
+            <Wand2 className={`size-4 ${isGenerating ? 'animate-spin' : ''}`} />
+          </button>
+
+          {isAIModalOpen && (
+            <>
+              <div 
+                className="fixed inset-0 z-[-1]" 
+                onClick={() => setIsAIModalOpen(false)} 
+              />
+              <div className="absolute bottom-full right-0 mb-4 p-4 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col gap-3 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-2xl z-[70] min-w-[300px]">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wand2 className="size-4 text-purple-400" />
+                  <span className="text-xs font-black text-white uppercase tracking-widest">AI Image Gen</span>
+                </div>
+                <textarea 
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="Describe what you want to draw... (e.g. 'A futuristic city')"
+                  className="bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 ring-purple-500/50 resize-none h-24"
+                  disabled={isGenerating}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleAIGenerate();
+                    }
+                  }}
+                />
+                <button 
+                  onClick={handleAIGenerate}
+                  disabled={isGenerating || !aiPrompt.trim()}
+                  className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <span>Generate Image</span>
+                  )}
+                </button>
               </div>
             </>
           )}

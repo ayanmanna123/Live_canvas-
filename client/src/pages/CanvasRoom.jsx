@@ -438,67 +438,77 @@ const CanvasRoom = () => {
     canvasRef.current?.download(`${canvasName}-${new Date().getTime()}.png`);
   };
 
-  const handleImageUpload = async (file) => {
-    if (!file) return;
-    
-    setNotification('Uploading image...');
+  const handleImageUpload = async (file, aiResult = null) => {
+    if (!file && !aiResult) return;
     
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      const uploadResponse = await fetch(`${backendUrl}/api/upload`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error('Upload API error:', errorText);
-        throw new Error(`Upload failed: ${errorText}`);
+      let imageUrl = '';
+      let w = 400;
+      let h = 400;
+
+      if (aiResult) {
+        imageUrl = aiResult.url;
+        w = aiResult.width || 400;
+        h = aiResult.height || 400;
+      } else {
+        setNotification('Uploading image...');
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const uploadResponse = await fetch(`${backendUrl}/api/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          throw new Error(`Upload failed: ${errorText}`);
+        }
+        
+        const result = await uploadResponse.json();
+        imageUrl = result.url;
+
+        // Get dimensions for uploaded image
+        const img = new Image();
+        img.src = imageUrl;
+        await new Promise(resolve => {
+          img.onload = () => {
+            const max = 400;
+            if (img.width > max || img.height > max) {
+              const ratio = Math.min(max / img.width, max / img.height);
+              w = img.width * ratio;
+              h = img.height * ratio;
+            } else {
+              w = img.width;
+              h = img.height;
+            }
+            resolve();
+          };
+        });
       }
       
-      const result = await uploadResponse.json();
-      
-      // 3. Add to Canvas
-      const img = new Image();
-      img.src = result.url;
-      img.crossOrigin = "anonymous"; // Handle CORS for canvas operations
-      img.onload = () => {
-        // Calculate initial size (max 400px width/height)
-        let w = img.width;
-        let h = img.height;
-        const max = 400;
-        if (w > max || h > max) {
-          const ratio = Math.min(max / w, max / h);
-          w *= ratio;
-          h *= ratio;
-        }
-
-        const imageStroke = {
-          id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          userId: socket.id,
-          type: 'image',
-          imageUrl: result.url,
-          points: [{ x: 100 - panOffset.x, y: 100 - panOffset.y }], // Place in viewport
-          imageWidth: w,
-          imageHeight: h,
-          tool: 'image'
-        };
-        
-        // Dispatch locally for instant feedback
-        if (canvasRef.current) {
-          canvasRef.current.addStroke(imageStroke);
-        }
-
-        socket.emit('draw', { roomId, canvasId: activeCanvas?._id, stroke: imageStroke });
-        setNotification('Image added to canvas!');
-        setTimeout(() => setNotification(null), 2000);
+      const imageStroke = {
+        id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: socket.id,
+        type: 'image',
+        imageUrl: imageUrl,
+        points: [{ x: 100 - panOffset.x, y: 100 - panOffset.y }], // Place in viewport
+        imageWidth: w,
+        imageHeight: h,
+        tool: 'image'
       };
+      
+      if (canvasRef.current) {
+        canvasRef.current.addStroke(imageStroke);
+      }
+
+      socket.emit('draw', { roomId, canvasId: activeCanvas?._id, stroke: imageStroke });
+      setNotification(aiResult ? 'AI Image added!' : 'Image added to canvas!');
+      setTimeout(() => setNotification(null), 2000);
     } catch (error) {
-      console.error('Upload error:', error);
-      setNotification(`Upload failed: ${error.message}`);
+      console.error('Image handling error:', error);
+      setNotification(`Error: ${error.message}`);
       setTimeout(() => setNotification(null), 3000);
     }
   };

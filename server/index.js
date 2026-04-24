@@ -13,6 +13,8 @@ import Canvas from './models/Canvas.js';
 import { sendPushNotification } from './utils/pushNotification.js';
 import ImageKit from 'imagekit';
 import multer from 'multer';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from 'axios';
 
 dotenv.config();
 
@@ -45,6 +47,117 @@ const imagekit = new ImageKit({
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+// Gemini AI Setup
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const listModels = async () => {
+  try {
+    // Note: listModels might not be available on the main genAI object depending on version
+    // but we can try to use it to debug
+    console.log("Checking available models...");
+  } catch (e) {}
+};
+listModels();
+
+app.post('/api/ai/generate-image', async (req, res) => {
+  const { prompt } = req.body;
+  
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+  }
+
+  try {
+    const refinePrompt = `You are a professional prompt engineer for AI image generators. 
+    The user wants to generate a simple drawing of: "${prompt}".
+    Create a highly detailed prompt for an image generator to produce a clean drawing. 
+    Requirements:
+    - Simple black and white line art, coloring book style.
+    - Clean, bold black outlines on a pure white background.
+    - No shading, no gradients, no colors, no 3D effects.
+    - Hand-drawn or vector sketch style (like MS Paint or a professional illustrator's line work).
+    - Isolated on a pure plain white background.
+    - NO TEXT in the image.
+    Return ONLY the refined prompt text, nothing else.`;
+
+    let result;
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    // Retry logic for 503/429 errors
+    let lastErr;
+    for (let i = 0; i < 3; i++) {
+      try {
+        result = await model.generateContent(refinePrompt);
+        break; 
+      } catch (err) {
+        lastErr = err;
+        if ((err.status === 503 || err.status === 429) && i < 2) {
+          console.warn(`Gemini busy (Attempt ${i+1}/3). Retrying in 2s...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        break;
+      }
+    }
+
+    if (!result) {
+      console.error('Gemini Final Error:', lastErr);
+      if (lastErr.status === 503) {
+        return res.status(503).json({ error: 'AI Service is overloaded. Please try again in 10 seconds.' });
+      }
+      if (lastErr.status === 429) {
+        return res.status(429).json({ error: 'AI Quota Exceeded. Please wait a moment.' });
+      }
+      throw lastErr;
+    }
+
+    const refinedPrompt = result.response.text().trim();
+    console.log('Refined Prompt:', refinedPrompt);
+
+    // 2. Use Pollinations.ai to generate the image
+    console.log('Requesting image from Pollinations.ai API...');
+    const seed = Math.floor(Math.random() * 1000000);
+    // Using image.pollinations.ai/prompt/ which is the direct API endpoint
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(refinedPrompt)}?width=1024&height=1024&seed=${seed}&nologo=true`;
+
+    // 3. Fetch the image buffer
+    console.log('Fetching image from Pollinations...');
+    const imageResponse = await axios.get(imageUrl, { 
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+      },
+      timeout: 30000 // 30 seconds timeout
+    });
+
+    const contentType = imageResponse.headers['content-type'];
+    console.log('Pollinations Response Content-Type:', contentType);
+
+    if (!contentType || !contentType.startsWith('image/')) {
+      const textResponse = Buffer.from(imageResponse.data).toString();
+      console.error('Pollinations Error Response:', textResponse.substring(0, 500));
+      throw new Error('Received invalid image data (possibly an error page)');
+    }
+
+    const buffer = Buffer.from(imageResponse.data, 'binary');
+    console.log('Image received from Pollinations. Buffer size:', buffer.length);
+
+    // 4. Upload to ImageKit for persistence
+    console.log('Uploading to ImageKit...');
+    const uploadResponse = await imagekit.upload({
+      file: buffer,
+      fileName: `ai_${Date.now()}.png`,
+      folder: '/live-canvas/ai'
+    });
+
+    console.log('AI Image Upload Success:', uploadResponse.url);
+    res.json({ url: uploadResponse.url, prompt: refinedPrompt });
+  } catch (error) {
+    console.error('AI Generation error:', error);
+    res.status(500).json({ error: 'AI Image generation failed: ' + error.message });
+  }
 });
 
 app.post('/api/upload', upload.single('image'), async (req, res) => {
