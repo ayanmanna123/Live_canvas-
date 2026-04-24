@@ -265,9 +265,9 @@ const Games = () => {
 
         {/* Player Count Modal for Ludo */}
         {showPlayerCountModal && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-md-surface-container-high w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl border border-md-outline/10 scale-in-center">
-              <h2 className="text-2xl font-black text-md-on-surface mb-6 text-center">Number of Players</h2>
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-rose-950/20 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white/90 backdrop-blur-3xl w-full max-w-sm rounded-[3rem] p-10 shadow-[0_20px_60px_-15px_rgba(244,63,94,0.3)] border border-white/60 scale-in-center">
+              <h2 className="text-3xl font-black text-rose-600 mb-8 text-center font-serif italic">How many players?</h2>
               <div className="grid grid-cols-1 gap-4">
                 {[2, 3, 4].map((count) => (
                   <button
@@ -278,10 +278,10 @@ const Games = () => {
                       setShowOpponentModal(true);
                       setSelectedOpponents([]);
                     }}
-                    className="flex items-center justify-between p-6 rounded-3xl bg-md-surface-container hover:bg-md-primary/10 border border-md-outline/5 transition-all hover:scale-[1.02]"
+                    className="flex items-center justify-between p-6 rounded-3xl bg-rose-50/50 hover:bg-rose-100/50 border border-rose-100 transition-all hover:scale-[1.02] group"
                   >
-                    <span className="text-xl font-bold">{count} Players</span>
-                    <Users className="size-6 text-md-primary" />
+                    <span className="text-xl font-bold text-rose-700">{count} Players</span>
+                    <Users className="size-6 text-rose-400 group-hover:scale-110 transition-transform" />
                   </button>
                 ))}
               </div>
@@ -298,20 +298,20 @@ const Games = () => {
 
         {/* Opponent Selection Modal */}
         {showOpponentModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-md-surface-container-high w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl border border-md-outline/10 scale-in-center">
-              <div className="flex justify-between items-center mb-6">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-rose-950/20 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white/90 backdrop-blur-3xl w-full max-w-md rounded-[3rem] p-10 shadow-[0_20px_60px_-15px_rgba(244,63,94,0.3)] border border-white/60 scale-in-center">
+              <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-2xl font-black text-md-on-surface">Select Opponents</h2>
-                  <p className="text-xs font-bold text-md-primary uppercase tracking-tighter">
-                    Choose {playerCount - 1} more player{playerCount > 2 ? 's' : ''}
+                  <h2 className="text-3xl font-black text-rose-600 font-serif italic">Find Opponents</h2>
+                  <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1">
+                    Choose {playerCount - 1} more player{playerCount > 2 ? 's' : ''} 💞
                   </p>
                 </div>
                 <button 
                   onClick={() => { setShowOpponentModal(false); setInvitationStatus(''); setIsInviting(false); setSelectedOpponents([]); }}
-                  className="p-2 rounded-full hover:bg-md-on-surface/10 transition-colors"
+                  className="p-3 rounded-full hover:bg-rose-50 text-rose-300 transition-all"
                 >
-                  <X className="size-5" />
+                  <X className="size-6" />
                 </button>
               </div>
 
@@ -376,7 +376,7 @@ const Games = () => {
                   <Button
                     disabled={selectedOpponents.length < playerCount - 1 || roomUsers.length === 0}
                     onClick={sendInvitations}
-                    className="w-full h-14 rounded-2xl text-lg font-black mt-4 shadow-lg shadow-md-primary/20"
+                    className="w-full h-16 rounded-[1.5rem] text-sm font-black uppercase tracking-widest mt-6 bg-gradient-to-r from-rose-400 to-pink-500 text-white shadow-xl shadow-rose-200/50 hover:brightness-110"
                   >
                     SEND INVITES ({selectedOpponents.length}/{playerCount - 1})
                   </Button>

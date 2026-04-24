@@ -52,7 +52,7 @@ const Chat = ({ socket, roomId, userName, isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 sm:inset-auto sm:top-24 sm:right-6 z-[60] sm:z-40 w-full sm:w-80 h-full sm:h-[calc(100vh-200px)] flex flex-col rounded-none sm:rounded-[2.5rem] glass shadow-2xl border-white/50 overflow-hidden animate-in slide-in-from-bottom sm:slide-in-from-right-5 duration-700">
+    <div className="fixed inset-0 sm:inset-auto sm:top-24 sm:right-6 z-[100] sm:z-[70] w-full sm:w-80 h-full sm:h-[calc(100vh-200px)] flex flex-col rounded-none sm:rounded-[2.5rem] glass shadow-2xl border-white/50 overflow-hidden animate-in slide-in-from-bottom sm:slide-in-from-right-5 duration-700">
       {/* Header */}
       <div className="p-5 border-b border-rose-100 flex items-center justify-between bg-rose-50/50">
         <div className="flex items-center gap-3">

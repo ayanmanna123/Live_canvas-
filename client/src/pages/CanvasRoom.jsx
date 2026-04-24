@@ -192,7 +192,15 @@ const CanvasRoom = () => {
 
     socket.on('active-canvas-update', (canvas) => {
       setActiveCanvas(canvas);
-      if (canvas.bgColor) setBgColor(canvas.bgColor);
+      if (canvas.bgColor) {
+        // Automatic migration: If the room was created with the old default dark color,
+        // switch it to the new romantic light default.
+        if (canvas.bgColor === '#0f172a') {
+          handleBgChange('#EBEBEB');
+        } else {
+          setBgColor(canvas.bgColor);
+        }
+      }
     });
 
     socket.on('canvas-list-update', (list) => {

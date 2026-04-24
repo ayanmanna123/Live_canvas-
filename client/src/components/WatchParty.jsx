@@ -173,13 +173,13 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="fixed bottom-24 right-96 z-50 w-[480px] bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden touch-none"
+        className="fixed bottom-24 right-96 z-50 w-[480px] bg-white/80 backdrop-blur-3xl rounded-[2.5rem] border border-white/60 shadow-[0_20px_60px_-15px_rgba(244,63,94,0.3)] overflow-hidden touch-none"
       >
         {/* Header */}
-        <div className="p-4 flex items-center justify-between bg-white/5 border-b border-white/5 cursor-move">
-          <div className="flex items-center gap-2">
-            <MonitorPlay className="h-5 w-5 text-indigo-400" />
-            <span className="text-sm font-bold text-slate-200 uppercase tracking-widest">Watch Party</span>
+        <div className="p-5 flex items-center justify-between bg-gradient-to-r from-rose-400 to-pink-500 text-white cursor-move">
+          <div className="flex items-center gap-3">
+            <MonitorPlay className="h-5 w-5 text-rose-100" />
+            <span className="text-xs font-black uppercase tracking-widest">Watch Party</span>
             {socket.id === masterId && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-full">
                 <Crown className="h-3 w-3 text-amber-500" />
@@ -187,9 +187,9 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
               </div>
             )}
             {playbackRate !== 1.0 && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full animate-pulse">
-                <RefreshCw className="h-3 w-3 text-indigo-400 rotate" />
-                <span className="text-[10px] font-bold text-indigo-400 uppercase">
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/20 border border-white/30 rounded-full animate-pulse">
+                <RefreshCw className="h-3 w-3 text-white rotate" />
+                <span className="text-[10px] font-bold text-white uppercase">
                   Syncing ({playbackRate}x)...
                 </span>
               </div>
@@ -199,33 +199,33 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
             {url && socket.id !== masterId && (
               <button 
                 onClick={onSyncRequest}
-                className="flex items-center gap-1.5 px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-indigo-400 border border-white/5 transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-[10px] font-black text-white border border-white/20 transition-all active:scale-95"
                 title="Sync with Master"
               >
                 <RefreshCw className="h-3 w-3" />
                 SYNC
               </button>
             )}
-            <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+            <button onClick={onClose} className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors">
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
         {/* URL Input */}
-        <div className="p-4 bg-black/20">
-          <form onSubmit={handleUrlSubmit} className="flex gap-2">
+        <div className="p-5 bg-rose-50/50 border-b border-rose-100">
+          <form onSubmit={handleUrlSubmit} className="flex gap-3">
             <div className="relative flex-1">
-              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+              <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-rose-300" />
               <input 
                 type="text" 
                 value={inputUrl}
                 onChange={(e) => setInputUrl(e.target.value)}
                 placeholder="Paste YouTube or Movie URL..."
-                className="w-full bg-slate-950/50 border border-white/5 rounded-xl pl-10 pr-3 py-2 text-xs text-white focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all"
+                className="w-full bg-white/60 border border-rose-100 rounded-2xl pl-11 pr-4 py-3 text-sm text-rose-700 placeholder:text-rose-300 focus:ring-4 focus:ring-rose-200/50 outline-none transition-all font-medium"
               />
             </div>
-            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 transition-all">
+            <button type="submit" className="px-6 py-2 bg-gradient-to-r from-rose-400 to-pink-500 text-white text-xs font-black rounded-2xl hover:brightness-110 active:scale-95 transition-all uppercase tracking-widest shadow-lg shadow-rose-200/50">
               LOAD
             </button>
           </form>
@@ -274,11 +274,11 @@ const WatchParty = ({ isOpen, onClose, roomId, socket, url, setUrl, playing, set
               />
             )
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 gap-3">
-               <div className="p-4 rounded-full bg-white/5 animate-pulse">
-                  <MonitorPlay className="h-8 w-8 opacity-20" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-rose-300 bg-rose-50/20 gap-4">
+               <div className="p-6 rounded-full bg-white/40 shadow-inner border border-white/60 animate-pulse">
+                  <MonitorPlay className="h-10 w-10 text-rose-400 opacity-60" />
                </div>
-               <p className="text-xs font-medium italic">No movie loaded yet...</p>
+               <p className="text-xs font-black uppercase tracking-widest">No movie loaded yet...</p>
             </div>
           )}
         </div>

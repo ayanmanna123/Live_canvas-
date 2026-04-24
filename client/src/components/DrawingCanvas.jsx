@@ -1121,7 +1121,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
             transform: 'translate(-4px, -50%)'
           }}
         >
-          <div className="bg-white border-4 border-md-primary rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.6)] p-1 flex flex-col gap-1 min-w-[200px]">
+          <div className="bg-white/90 border-4 border-rose-400 rounded-2xl shadow-[0_15px_40px_-10px_rgba(244,63,94,0.4)] p-1 flex flex-col gap-1 min-w-[200px] backdrop-blur-xl">
             <textarea
               ref={textareaRef}
               autoFocus
@@ -1152,7 +1152,6 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
           </div>
         </div>
       )}
-      {/* Floating Edit Menu */}
       {editMenu && (
         <div 
           className="absolute z-[110] animate-in zoom-in-95 duration-200"
@@ -1164,9 +1163,9 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="bg-slate-900/95 border border-white/10 backdrop-blur-xl rounded-2xl p-2 shadow-2xl flex items-center gap-1 min-w-max">
+          <div className="bg-white/90 border border-rose-100 backdrop-blur-2xl rounded-2xl p-2 shadow-[0_20px_50px_-12px_rgba(244,63,94,0.3)] flex items-center gap-1 min-w-max">
             {/* Color Selection Grid */}
-            <div className="flex flex-col gap-1 pr-2 border-r border-white/10 mr-1">
+            <div className="flex flex-col gap-1 pr-2 border-r border-rose-100 mr-1">
               <div className="flex gap-1">
                 {['#ffffff', '#1C1B1F', '#ef4444', '#f97316', '#facc15'].map(c => (
                   <button
@@ -1201,7 +1200,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
 
             <button 
               onClick={() => handleEditAction('duplicate')}
-              className="size-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
+              className="size-9 flex items-center justify-center rounded-xl hover:bg-rose-50 text-rose-400 transition-colors"
               title="Duplicate"
             >
               <Copy className="size-4" />
@@ -1209,17 +1208,17 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
 
             <button 
               onClick={() => handleEditAction('move-front')}
-              className="size-9 flex items-center justify-center rounded-xl hover:bg-white/10 text-slate-300 transition-colors"
+              className="size-9 flex items-center justify-center rounded-xl hover:bg-rose-50 text-rose-400 transition-colors"
               title="Bring to Front"
             >
               <ChevronUp className="size-4" />
             </button>
 
-            <div className="w-px h-6 bg-white/10 mx-1" />
+            <div className="w-px h-6 bg-rose-100 mx-1" />
 
             <button 
               onClick={() => handleEditAction('delete')}
-              className="size-9 flex items-center justify-center rounded-xl hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+              className="size-9 flex items-center justify-center rounded-xl hover:bg-rose-100/50 text-rose-500 hover:text-rose-600 transition-colors"
               title="Delete"
             >
               <Trash2 className="size-4" />
@@ -1227,13 +1226,13 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
             
             <button 
               onClick={() => setEditMenu(null)}
-              className="ml-1 size-9 flex items-center justify-center rounded-xl bg-white/5 text-slate-400 hover:text-white"
+              className="ml-1 size-9 flex items-center justify-center rounded-xl bg-rose-500 text-white hover:brightness-110 shadow-md"
             >
               <Check className="size-4" />
             </button>
           </div>
           {/* Arrow pointing down */}
-          <div className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 bg-slate-900 border-r border-b border-white/10 rotate-45" />
+          <div className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 bg-white border-r border-b border-rose-100 rotate-45" />
         </div>
       )}
     </div>

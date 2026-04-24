@@ -33,6 +33,7 @@ const Toolbar = ({
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
+  const [isSizeOpen, setIsSizeOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -118,7 +119,7 @@ const Toolbar = ({
                 title={b.label}
               >
                 <b.icon className="size-5" />
-                <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-[10px] font-bold text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-rose-500/90 backdrop-blur-md text-[10px] font-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg shadow-rose-200">
                   {b.label}
                 </span>
               </button>
@@ -168,17 +169,35 @@ const Toolbar = ({
           </div>
         </div>
 
-        {/* Brush Size */}
-        <div className="flex items-center gap-2 px-2">
-           <select 
-              value={size}
-              onChange={(e) => setSize(Number(e.target.value))}
-              className="bg-transparent text-slate-300 text-[11px] font-bold focus:outline-none cursor-pointer hover:text-white transition-colors appearance-none px-2"
-            >
-              {sizes.map(s => (
-                <option key={s} value={s} className="bg-slate-900 text-white">{s}px</option>
-              ))}
-            </select>
+        {/* Brush Size Custom Dropdown */}
+        <div className="relative flex items-center px-2">
+           <button 
+             onClick={() => setIsSizeOpen(!isSizeOpen)}
+             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-rose-50 text-rose-400 transition-all group"
+           >
+             <span className="text-[11px] font-black uppercase tracking-widest">{size}px</span>
+             <Plus className={`size-3 transition-transform duration-300 ${isSizeOpen ? 'rotate-45' : ''}`} />
+           </button>
+
+           {isSizeOpen && (
+             <>
+               <div className="fixed inset-0 z-[-1]" onClick={() => setIsSizeOpen(false)} />
+               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 p-2 bg-white/90 backdrop-blur-2xl border border-rose-100 rounded-2xl flex flex-col gap-1 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-xl z-[70] min-w-[80px]">
+                 {sizes.map(s => (
+                   <button
+                     key={s}
+                     onClick={() => {
+                       setSize(s);
+                       setIsSizeOpen(false);
+                     }}
+                     className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${size === s ? 'bg-rose-500 text-white' : 'text-rose-400 hover:bg-rose-50'}`}
+                   >
+                     {s}px
+                   </button>
+                 ))}
+               </div>
+             </>
+           )}
         </div>
 
         {/* Action Group */}
@@ -250,7 +269,7 @@ const Toolbar = ({
             {isReactionWheelOpen && (
               <>
                 <div className="fixed inset-0 z-[-1]" onClick={() => setIsReactionWheelOpen(false)} />
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 p-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl flex gap-2 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-2xl z-[70]">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 p-2 bg-white/90 backdrop-blur-2xl border border-rose-100 rounded-[2rem] flex gap-2 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-[0_15px_50px_-12px_rgba(244,63,94,0.4)] z-[70]">
                   {['❤️', '🔥', '👍', '😂', '😮', '🎉'].map(emoji => (
                     <button
                       key={emoji}
@@ -258,7 +277,7 @@ const Toolbar = ({
                         onReaction(emoji);
                         setIsReactionWheelOpen(false);
                       }}
-                      className="size-10 flex items-center justify-center rounded-xl hover:bg-white/10 hover:scale-125 transition-all text-xl"
+                      className="size-11 flex items-center justify-center rounded-2xl hover:bg-rose-50 hover:scale-125 transition-all text-xl"
                     >
                       {emoji}
                     </button>
@@ -283,24 +302,26 @@ const Toolbar = ({
             {isAIModalOpen && (
               <>
                 <div className="fixed inset-0 z-[-1]" onClick={() => setIsAIModalOpen(false)} />
-                <div className="absolute bottom-full right-0 mb-4 p-4 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col gap-3 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-2xl z-[70] min-w-[300px]">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkle className="size-4 text-purple-400" />
-                    <span className="text-xs font-black text-white uppercase tracking-widest">AI Image Gen</span>
+                <div className="absolute bottom-full right-0 mb-4 p-6 bg-white/90 backdrop-blur-3xl border border-rose-100 rounded-[2.5rem] flex flex-col gap-4 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-[0_20px_60px_-15px_rgba(244,63,94,0.4)] z-[70] min-w-[320px]">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="size-8 rounded-full bg-purple-100 flex items-center justify-center">
+                      <Sparkle className="size-4 text-purple-500" />
+                    </div>
+                    <span className="text-xs font-black text-rose-600 uppercase tracking-widest">Dream Together ✨</span>
                   </div>
                   <textarea 
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     placeholder="Describe what you want to draw..."
-                    className="bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 ring-purple-500/50 resize-none h-24"
+                    className="bg-rose-50/30 border-2 border-rose-50 focus:border-rose-200 rounded-2xl p-4 text-sm text-rose-700 focus:outline-none transition-all resize-none h-28 font-bold"
                     disabled={isGenerating}
                   />
                   <button 
                     onClick={handleAIGenerate}
                     disabled={isGenerating || !aiPrompt.trim()}
-                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-gradient-to-r from-purple-500 to-rose-400 hover:brightness-110 disabled:opacity-50 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-purple-200"
                   >
-                    {isGenerating ? "Generating..." : "Generate Image"}
+                    {isGenerating ? "Dreaming..." : "Create Memory Image"}
                   </button>
                 </div>
               </>
