@@ -853,7 +853,15 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       return;
     }
 
-    const newPoint = { x: worldX, y: worldY };
+    const snappedX = snapValue(worldX);
+    const snappedY = snapValue(worldY);
+    
+    // Only add point if it's different from the last one (prevents redundant points on same grid cell)
+    const pts = currentStroke.current.points;
+    const lastPt = pts[pts.length - 1];
+    if (snappedX === lastPt.x && snappedY === lastPt.y) return;
+
+    const newPoint = { x: snappedX, y: snappedY };
     currentStroke.current.points.push(newPoint);
     
     // Immediate localized feedback
@@ -880,12 +888,12 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     const rect = containerRef.current.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
-    const worldX = offsetX - panOffset.x;
-    const worldY = offsetY - panOffset.y;
+    const worldX = snapValue(offsetX - panOffset.x);
+    const worldY = snapValue(offsetY - panOffset.y);
 
     setTextInput({
-      x: offsetX,
-      y: offsetY,
+      x: worldX + panOffset.x,
+      y: worldY + panOffset.y,
       worldX,
       worldY,
       value: ''
