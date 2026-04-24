@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, History as HistoryIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -83,22 +83,22 @@ const Toolbar = ({
   };
   
   const colors = [
-    '#ffffff', '#6750A4', '#1C1B1F', '#ef4444', '#f97316', 
-    '#10b981', '#06b6d4', '#3b82f6', '#d946ef'
+    '#ffffff', '#FFB6C1', '#FFC0CB', '#FF69B4', '#DA70D6', 
+    '#E6E6FA', '#FFF0F5', '#FF7F50', '#FF1493'
   ];
 
   const sizes = [2, 5, 10, 20, 40];
 
   const brushes = [
-    { id: 'select', icon: MousePointer2, label: 'Select' },
-    { id: 'laser', icon: Target, label: 'Laser' },
-    { id: 'pencil', icon: Pencil, label: 'Pencil' },
-    { id: 'highlighter', icon: Highlighter, label: 'High' },
-    { id: 'neon', icon: Sparkles, label: 'Neon' },
-    { id: 'dotted', icon: CircleDot, label: 'Dot' },
-    { id: 'text', icon: Type, label: 'Text' },
-    { id: 'eraser', icon: Eraser, label: 'Eraser' },
-    { id: 'pan', icon: Hand, label: 'Pan' },
+    { id: 'select', icon: MousePointer2, label: 'Cupid Selector' },
+    { id: 'laser', icon: Sparkles, label: 'Heart Laser' },
+    { id: 'pencil', icon: Pencil, label: 'Love Pen ✍️' },
+    { id: 'highlighter', icon: Highlighter, label: 'Glow Brush' },
+    { id: 'neon', icon: Wand2, label: 'Magic Sparks' },
+    { id: 'dotted', icon: CircleDot, label: 'Stardust' },
+    { id: 'text', icon: Type, label: 'Secret Note 💌' },
+    { id: 'eraser', icon: Eraser, label: 'Heart Fix 💔' },
+    { id: 'pan', icon: Hand, label: 'Move Love' },
   ];
 
   return (
@@ -114,7 +114,7 @@ const Toolbar = ({
               <button
                 key={b.id}
                 onClick={() => setTool(b.id)}
-                className={`group relative size-11 flex items-center justify-center rounded-full transition-all duration-300 ${isActive ? "bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)] scale-110" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}
+                className={`group relative size-11 flex items-center justify-center rounded-full transition-all duration-300 ${isActive ? "bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] scale-110" : "text-rose-300 hover:bg-rose-50 hover:text-rose-500"}`}
                 title={b.label}
               >
                 <b.icon className="size-5" />
@@ -127,8 +127,8 @@ const Toolbar = ({
           
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="group relative size-11 flex items-center justify-center rounded-full text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-300"
-            title="Upload Image"
+            className="group relative size-11 flex items-center justify-center rounded-full text-rose-300 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300"
+            title="Memory Photo 📷"
           >
             <ImageIcon className="size-5" />
             <input 
@@ -164,7 +164,7 @@ const Toolbar = ({
               onChange={(e) => setBgColor(e.target.value)}
               className="absolute inset-0 w-[150%] h-[150%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
             />
-            <PaintBucket className="absolute inset-0 m-auto size-3 text-white pointer-events-none mix-blend-difference" />
+            <PaintBucket className="absolute inset-0 m-auto size-3 text-rose-400 pointer-events-none mix-blend-difference" />
           </div>
         </div>
 
@@ -182,11 +182,11 @@ const Toolbar = ({
         </div>
 
         {/* Action Group */}
-        <div className="flex items-center gap-1 pl-2 border-l border-white/5">
-          <button onClick={onUndo} className="size-10 flex items-center justify-center rounded-full text-slate-400 hover:bg-white/5 hover:text-white transition-all">
+        <div className="flex items-center gap-1 pl-2 border-l border-rose-100">
+          <button onClick={onUndo} className="size-10 flex items-center justify-center rounded-full text-rose-300 hover:bg-rose-50 hover:text-rose-500 transition-all">
             <Undo2 className="size-4" />
           </button>
-          <button onClick={onRedo} className="size-10 flex items-center justify-center rounded-full text-slate-400 hover:bg-white/5 hover:text-white transition-all">
+          <button onClick={onRedo} className="size-10 flex items-center justify-center rounded-full text-rose-300 hover:bg-rose-50 hover:text-rose-500 transition-all">
             <Redo2 className="size-4" />
           </button>
         </div>
@@ -196,17 +196,17 @@ const Toolbar = ({
       <div className="flex items-center gap-1.5 p-1.5 rounded-full glass-light border border-white/5 premium-shadow pointer-events-auto animate-in slide-in-from-bottom-8 duration-700 delay-100">
         
         {/* Group 1: Collaboration */}
-        <div className="flex items-center gap-1 px-1 border-r border-white/5">
-          <button onClick={onToggleHistory} className={`size-9 flex items-center justify-center rounded-full transition-all ${isHistoryOpen ? "bg-indigo-500/20 text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Activity History">
+        <div className="flex items-center gap-1 px-1 border-r border-rose-100">
+          <button onClick={onToggleHistory} className={`size-9 flex items-center justify-center rounded-full transition-all ${isHistoryOpen ? "bg-rose-500/20 text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Our Memories">
             <History className="size-4" />
           </button>
-          <button onClick={onToggleCall} className={`size-9 flex items-center justify-center rounded-full transition-all ${inCall ? "bg-red-500/20 text-red-400" : "text-slate-400 hover:text-white"}`} title="Video Call">
+          <button onClick={onToggleCall} className={`size-9 flex items-center justify-center rounded-full transition-all ${inCall ? "bg-rose-500 text-white shadow-md shadow-rose-200" : "text-rose-300 hover:text-rose-500"}`} title="Together Now 💞">
             <Video className="size-4" />
           </button>
-          <button onClick={onToggleChat} className="relative size-9 flex items-center justify-center rounded-full text-slate-400 hover:text-white transition-all" title="Chat">
+          <button onClick={onToggleChat} className="relative size-9 flex items-center justify-center rounded-full text-rose-300 hover:text-rose-500 transition-all" title="Secret Letters">
             <MessageSquare className="size-4" />
             {unreadCount > 0 && (
-              <span className="absolute top-0 right-0 size-4 flex items-center justify-center rounded-full bg-indigo-600 text-[8px] font-bold text-white ring-2 ring-slate-900">
+              <span className="absolute top-0 right-0 size-4 flex items-center justify-center rounded-full bg-rose-500 text-[8px] font-bold text-white ring-2 ring-white">
                 {unreadCount}
               </span>
             )}
@@ -214,35 +214,35 @@ const Toolbar = ({
         </div>
 
         {/* Group 2: Canvas Tools */}
-        <div className="flex items-center gap-1 px-1 border-r border-white/5">
-          <button onClick={() => setShowRopes(!showRopes)} className={`size-9 flex items-center justify-center rounded-full transition-all ${showRopes ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Toggle Ropes">
-            <Spline className="size-4" />
+        <div className="flex items-center gap-1 px-1 border-r border-rose-100">
+          <button onClick={() => setShowRopes(!showRopes)} className={`size-9 flex items-center justify-center rounded-full transition-all ${showRopes ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Heart Strings 💞">
+            <Spline className={`size-4 ${showRopes ? 'animate-pulse' : ''}`} />
           </button>
-          <button onClick={() => setAutoMode(!autoMode)} className={`size-9 flex items-center justify-center rounded-full transition-all ${autoMode ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Auto Shape">
-            <Shapes className={`size-4 ${autoMode ? 'animate-pulse' : ''}`} />
+          <button onClick={() => setAutoMode(!autoMode)} className={`size-9 flex items-center justify-center rounded-full transition-all ${autoMode ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Perfect Hearts">
+            <Wand2 className={`size-4 ${autoMode ? 'animate-spin-slow' : ''}`} />
           </button>
-          <button onClick={() => setShowGrid(!showGrid)} className={`size-9 flex items-center justify-center rounded-full transition-all ${showGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Toggle Grid">
+          <button onClick={() => setShowGrid(!showGrid)} className={`size-9 flex items-center justify-center rounded-full transition-all ${showGrid ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Love Grid">
             <Grid3X3 className="size-4" />
           </button>
-          <button onClick={() => setSnapToGrid(!snapToGrid)} className={`size-9 flex items-center justify-center rounded-full transition-all ${snapToGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Snap to Grid">
-            <Magnet className={`size-4 ${snapToGrid ? 'animate-pulse text-indigo-400' : ''}`} />
+          <button onClick={() => setSnapToGrid(!snapToGrid)} className={`size-9 flex items-center justify-center rounded-full transition-all ${snapToGrid ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Magnetic Love">
+            <Magnet className={`size-4 ${snapToGrid ? 'animate-pulse text-rose-500' : ''}`} />
           </button>
         </div>
 
         {/* Group 3: Fun & Reactions */}
         <div className="flex items-center gap-1 px-1 border-r border-white/5">
-          <button onClick={onToggleWatchParty} className={`size-9 flex items-center justify-center rounded-full transition-all ${isWatchPartyOpen ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Watch Party">
+          <button onClick={onToggleWatchParty} className={`size-9 flex items-center justify-center rounded-full transition-all ${isWatchPartyOpen ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Watch Party">
             <Film className="size-4" />
           </button>
-          <button onClick={onOpenGames} className="size-9 flex items-center justify-center rounded-full text-slate-400 hover:text-white transition-all" title="Games">
+          <button onClick={onOpenGames} className="size-9 flex items-center justify-center rounded-full text-rose-300 hover:text-rose-500 transition-all" title="Games">
             <Gamepad2 className="size-4" />
           </button>
           
           <div className="relative">
             <button 
               onClick={() => setIsReactionWheelOpen(!isReactionWheelOpen)}
-              className={`size-9 flex items-center justify-center rounded-full transition-all ${isReactionWheelOpen ? "bg-indigo-500 text-white" : "text-slate-400 hover:text-white"}`} 
-              title="React"
+              className={`size-9 flex items-center justify-center rounded-full transition-all ${isReactionWheelOpen ? "bg-rose-500 text-white" : "text-rose-300 hover:text-rose-500"}`} 
+              title="Send Love"
             >
               <Smile className="size-4" />
             </button>
@@ -274,8 +274,8 @@ const Toolbar = ({
           <div className="relative">
             <button 
               onClick={() => setIsAIModalOpen(!isAIModalOpen)}
-              className={`size-9 flex items-center justify-center rounded-full transition-all ${isAIModalOpen ? "bg-purple-600 text-white" : "text-slate-400 hover:text-purple-400"}`} 
-              title="AI Image Generator"
+              className={`size-9 flex items-center justify-center rounded-full transition-all ${isAIModalOpen ? "bg-rose-600 text-white shadow-lg" : "text-rose-300 hover:text-rose-500"}`} 
+              title="Dream Together ✨"
             >
               <Wand2 className={`size-4 ${isGenerating ? 'animate-spin' : ''}`} />
             </button>
@@ -307,11 +307,11 @@ const Toolbar = ({
             )}
           </div>
 
-          <button onClick={onClear} className="size-9 flex items-center justify-center rounded-full text-slate-400 hover:text-red-400 transition-all" title="Clear All">
+          <button onClick={onClear} className="size-9 flex items-center justify-center rounded-full text-rose-200 hover:text-rose-500 transition-all" title="Reset Memory">
             <Trash2 className="size-4" />
           </button>
           
-          <button onClick={onShare} className="ml-1 size-9 flex items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:brightness-110 active:scale-95 transition-all" title="Share">
+          <button onClick={onShare} className="ml-1 size-9 flex items-center justify-center rounded-full bg-gradient-to-tr from-rose-400 to-pink-500 text-white shadow-lg shadow-rose-200/50 hover:brightness-110 active:scale-95 transition-all" title="Share with My Love 💞">
             <Share2 className="size-4" />
           </button>
         </div>

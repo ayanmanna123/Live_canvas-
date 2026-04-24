@@ -508,9 +508,25 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('cursor-reaction-remote', { userId: socket.id, emoji, position });
   });
 
-  socket.on('change-background', ({ roomId, color }) => {
+  socket.on('change-background', async ({ roomId, color }) => {
     if (!roomId) return;
+    
+    // Broadcast to others immediately
     socket.to(roomId).emit('background-changed', color);
+
+    // Persist to database
+    if (mongoose.connection.readyState === 1) {
+      try {
+        // Update the most recently created/active canvas for this room
+        const activeCanvas = await Canvas.findOne({ roomId }).sort({ createdAt: -1 });
+        if (activeCanvas) {
+          activeCanvas.bgColor = color;
+          await activeCanvas.save();
+        }
+      } catch (error) {
+        console.error('Error saving background color:', error);
+      }
+    }
   });
 
   socket.on('movie-update', (data) => {

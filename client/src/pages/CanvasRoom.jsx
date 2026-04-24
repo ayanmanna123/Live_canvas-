@@ -7,11 +7,13 @@ import Chat from '../components/Chat';
 import UserHistoryPanel from '../components/UserHistory';
 import CanvasListPanel from '../components/CanvasListPanel';
 import NewCanvasModal from '../components/NewCanvasModal';
-import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video, Plus, Layout, History, Sparkles, Camera } from 'lucide-react';
+import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video, Plus, Layout, History, Sparkles, Camera, Paintbrush } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Peer from 'simple-peer';
 import VideoCall from '../components/VideoCall';
 import WatchParty from '../components/WatchParty';
+import RomanticWidgets from '../components/RomanticWidgets';
+import FloatingHearts from '../components/FloatingHearts';
 
 const CanvasRoom = () => {
   const { roomId } = useParams();
@@ -27,8 +29,8 @@ const CanvasRoom = () => {
   });
   const [users, setUsers] = useState([]);
   const [remoteCursors, setRemoteCursors] = useState({});
-  const [color, setColor] = useState('#ffffff');
-  const [bgColor, setBgColor] = useState('#0f172a'); // Default slate-900
+  const [color, setColor] = useState('#FFB6C1');
+  const [bgColor, setBgColor] = useState('#EBEBEB'); // Default Light Grey as requested
   const [size, setSize] = useState(5);
   const [tool, setTool] = useState('pencil');
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -429,7 +431,7 @@ const CanvasRoom = () => {
 
   const handleShare = () => {
     navigator.clipboard.writeText(roomId);
-    setNotification('Room ID copied to clipboard!');
+    setNotification('Invite Link Copied to Share with Your Love! 💞');
     setTimeout(() => setNotification(null), 2000);
   };
 
@@ -537,8 +539,9 @@ const CanvasRoom = () => {
 
       {/* Notification Toast */}
       {notification && (
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-2xl bg-indigo-600 text-white shadow-2xl animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <p className="text-sm font-semibold">{notification}</p>
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full bg-rose-500 text-white shadow-2xl animate-in fade-in slide-in-from-bottom-5 duration-300 flex items-center gap-2">
+          <Sparkles className="size-4 animate-pulse" />
+          <p className="text-sm font-bold">{notification}</p>
         </div>
       )}
 
@@ -606,56 +609,56 @@ const CanvasRoom = () => {
       {/* Header Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 z-[60] flex items-center justify-between px-6 pointer-events-none">
         {/* Top Left: Logo & Room Info */}
-        <div className="flex items-center gap-4 pointer-events-auto glass-light rounded-2xl p-1.5 pr-4 animate-in slide-in-from-top-10 duration-500">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <Sparkles className="size-5 text-white" />
+        <div className="flex items-center gap-4 pointer-events-auto glass-light rounded-3xl p-2 pr-6 animate-in slide-in-from-top-10 duration-700 shadow-lg border-white/40">
+          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg shadow-rose-200/50 heart-pulse">
+            <Paintbrush className="size-6 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-black text-white leading-tight tracking-wide">
-              {activeCanvas?.name || 'Untitled'}
+            <h1 className="text-lg font-black text-rose-600 leading-tight tracking-tight font-serif italic">
+              {activeCanvas?.name || 'Our Love Space ❤️'}
             </h1>
             <div className="flex items-center gap-2">
-               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Room: {roomId}</p>
-               <div className="h-1 w-1 rounded-full bg-slate-600" />
+               <p className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">Memory Room: {roomId}</p>
+               <div className="h-1 w-1 rounded-full bg-rose-200" />
                <div className="flex items-center gap-1.5">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-bold text-slate-300">{users.length} Online</span>
+                  <div className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                  <span className="text-[10px] font-black text-rose-500 uppercase tracking-tighter">Together Now 💞</span>
                </div>
             </div>
           </div>
         </div>
 
         {/* Top Right: Global Actions */}
-        <div className="flex items-center gap-2 pointer-events-auto glass-light rounded-2xl p-1.5 animate-in slide-in-from-top-10 duration-500 delay-100">
+        <div className="flex items-center gap-2 pointer-events-auto glass rounded-3xl p-2 animate-in slide-in-from-top-10 duration-700 delay-100 shadow-md">
           <button 
             onClick={() => setIsCanvasListOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl hover:bg-rose-50 text-rose-400 hover:text-rose-600 transition-all font-bold"
           >
             <History className="size-4" />
-            <span className="text-[11px] font-black uppercase tracking-wider">Canvases</span>
+            <span className="text-[11px] uppercase tracking-widest">Love Story</span>
           </button>
           
           <button 
             onClick={handleCapture}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-slate-300 hover:text-white transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl hover:bg-rose-50 text-rose-400 hover:text-rose-600 transition-all font-bold"
           >
             <Camera className="size-4" />
-            <span className="text-[11px] font-black uppercase tracking-wider">Capture</span>
+            <span className="text-[11px] uppercase tracking-widest">Snapshot</span>
           </button>
 
           <button 
             onClick={() => setIsNewCanvasModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-indigo-600 text-white font-black text-[11px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-indigo-600/20 flex items-center gap-2"
+            className="px-6 py-2 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-500 text-white font-black text-[11px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-rose-200/50 flex items-center gap-2"
           >
             <Plus className="size-4 stroke-[3px]" />
-            <span>New</span>
+            <span>Create Memory</span>
           </button>
 
-          <div className="w-px h-6 bg-white/10 mx-1" />
+          <div className="w-px h-6 bg-rose-100 mx-1" />
 
           <button 
             onClick={() => navigate('/')}
-            className="size-10 flex items-center justify-center rounded-xl hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-all"
+            className="size-10 flex items-center justify-center rounded-2xl hover:bg-rose-50 text-rose-300 hover:text-rose-500 transition-all"
             title="Leave Room"
           >
             <LogOut className="size-4" />
@@ -664,33 +667,39 @@ const CanvasRoom = () => {
       </div>
 
       {/* User Presences (Expandable on click) */}
-      <div className="fixed top-20 left-6 z-40 pointer-events-none">
+      <div className="fixed top-24 left-6 z-40 pointer-events-none">
          <div 
-            className="pointer-events-auto glass-light rounded-2xl p-2 cursor-pointer group transition-all hover:bg-white/5"
+            className="pointer-events-auto glass rounded-3xl p-2.5 cursor-pointer group transition-all hover:bg-rose-50/50 shadow-md border-white/50"
             onClick={() => setIsUsersListOpen(!isUsersListOpen)}
          >
-            <div className="flex -space-x-2">
+            <div className="flex -space-x-3">
                {users.slice(0, 3).map((user, i) => (
-                  <div key={user.id} className="size-8 rounded-full border-2 border-slate-900 bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg" style={{ zIndex: 10 - i }}>
+                  <div key={user.id} className="size-10 rounded-full border-2 border-white bg-gradient-to-tr from-rose-300 to-pink-400 flex items-center justify-center text-xs font-black text-white shadow-md heart-pulse" style={{ zIndex: 10 - i, animationDelay: `${i * 0.2}s` }}>
                      {user.name.charAt(0).toUpperCase()}
                   </div>
                ))}
                {users.length > 3 && (
-                  <div className="size-8 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[10px] font-bold text-white z-0">
+                  <div className="size-10 rounded-full border-2 border-white bg-rose-100 flex items-center justify-center text-xs font-black text-rose-500 z-0">
                      +{users.length - 3}
                   </div>
                )}
             </div>
 
             {isUsersListOpen && (
-               <div className="mt-4 space-y-2 glass p-3 rounded-2xl min-w-[160px] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Active Users</p>
+               <div className="mt-4 space-y-2 glass p-4 rounded-3xl min-w-[180px] animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl border-white/60">
+                  <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
+                    <span className="size-1.5 rounded-full bg-rose-400" />
+                    {users.length} Hearts Connected
+                  </p>
                   {users.map((user) => (
-                    <div key={user.id} className="flex items-center gap-2 px-1 py-1">
-                      <div className={`size-1.5 rounded-full ${user.id === socket?.id ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
-                      <span className="text-xs text-slate-200 font-medium truncate">
-                        {user.name} {user.id === socket?.id && '(You)'}
-                      </span>
+                    <div key={user.id} className="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-rose-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`size-2 rounded-full ${user.id === socket?.id ? 'bg-rose-500 animate-pulse' : 'bg-pink-400'}`} />
+                        <span className="text-xs text-rose-700 font-bold truncate max-w-[100px]">
+                          {user.name}
+                        </span>
+                      </div>
+                      {user.id === socket?.id && <span className="text-[9px] font-black text-rose-300 uppercase">You</span>}
                     </div>
                   ))}
                </div>
@@ -726,6 +735,9 @@ const CanvasRoom = () => {
         setCurrentTime={setMovieTime}
         masterId={movieMasterId}
       />
+
+      <RomanticWidgets />
+      <FloatingHearts />
 
       {/* Drawing Canvas */}
       <div className="absolute inset-0 z-0">
@@ -771,18 +783,18 @@ const CanvasRoom = () => {
           id !== socket?.id && (
             <div 
               key={id}
-              className="absolute transition-all duration-75"
+              className="absolute transition-all duration-150"
               style={{ 
                 left: cursor.position.x + panOffset.x, 
                 top: cursor.position.y + panOffset.y 
               }}
             >
               <div className="relative">
-                <svg width="24" height="24" viewBox="0 0 24 24" className="fill-indigo-500 drop-shadow-md">
-                  <path d="M5.653 3.123l13.563 13.562-4.015.589 4.108 8.019-2.212 1.141-4.05-7.899-2.727 3.328V3.123z" />
+                <svg width="24" height="24" viewBox="0 0 24 24" className="fill-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.4)]">
+                  <path d="M5.65355 17.3039L4.46228 5.23455C4.12402 1.80214 7.86834 -0.667797 10.6133 1.49053L20.2571 9.0712C23.002 11.2295 21.8484 15.6023 18.3371 16.1438L5.65355 17.3039Z" />
                 </svg>
-                <div className="absolute left-4 top-4 whitespace-nowrap rounded bg-indigo-600 px-2 py-1 text-[10px] font-bold text-white shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
-                  {cursor.userName}
+                <div className="absolute left-6 top-0 whitespace-nowrap rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-black text-rose-600 shadow-md border border-rose-100">
+                  {cursor.userName} 💞
                 </div>
               </div>
             </div>
@@ -804,17 +816,6 @@ const CanvasRoom = () => {
           </div>
         ))}
       </div>
-
-      <style jsx>{`
-        @keyframes bounce-fade {
-          0% { transform: scale(0) translateY(0); opacity: 0; }
-          20% { transform: scale(1.5) translateY(-20px); opacity: 1; }
-          100% { transform: scale(1) translateY(-400px); opacity: 0; }
-        }
-        .animate-bounce-fade {
-          animation: bounce-fade 2s ease-out forwards;
-        }
-      `}</style>
     </div>
   );
 };

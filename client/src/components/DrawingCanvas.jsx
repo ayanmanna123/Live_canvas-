@@ -304,7 +304,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     ctx.lineJoin = 'round';
 
     if (stroke.type === 'text') {
-      ctx.font = `bold ${stroke.size * 2}px Roboto, sans-serif`;
+      ctx.font = `bold ${stroke.size * 2.5}px "Pacifico", "Great Vibes", cursive`;
       ctx.fillStyle = stroke.color;
       ctx.textBaseline = 'middle';
       return;
@@ -316,18 +316,20 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
         ctx.lineCap = 'butt';
         ctx.lineJoin = 'bevel';
         break;
+      case 'laser':
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#FF69B4';
+        ctx.strokeStyle = '#FF69B4';
+        ctx.lineWidth = 6;
+        break;
       case 'neon':
-        ctx.shadowBlur = Math.max(15, stroke.size * 4);
+        ctx.shadowBlur = Math.max(20, stroke.size * 5);
         ctx.shadowColor = stroke.color;
+        // Add a white core for premium look
+        ctx.strokeStyle = '#ffffff';
         break;
       case 'dotted':
-        ctx.setLineDash([1, stroke.size * 2]);
-        break;
-      case 'laser':
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#ff4444';
-        ctx.strokeStyle = '#ff4444';
-        ctx.lineWidth = 4;
+        ctx.setLineDash([2, stroke.size * 3]);
         break;
       default:
         break;
@@ -379,12 +381,11 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     ctx.save();
     ctx.translate(panOffset.x, panOffset.y);
     
-    // Draw ropes first (behind text and strokes)
+    // Draw "Love Strings" (Heart-shaped connectors)
     if (showRopes) {
       const textStrokesByUser = strokes
         .filter(s => s.type === 'text')
         .reduce((acc, s) => {
-          // Use userId, or socket.id as fallback, or 'anonymous'
           const uid = s.userId || 'anonymous';
           if (!acc[uid]) acc[uid] = [];
           acc[uid].push(s);
@@ -395,15 +396,14 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
         if (userStrokes.length < 2) return;
         
         ctx.save();
-        ctx.beginPath();
-        const uColor = getUserColor(uid);
+        const uColor = '#FF69B4'; // Romantic Pink
         ctx.strokeStyle = uColor;
-        ctx.lineWidth = 1.5; // Thinner for a more delicate look
+        ctx.lineWidth = 2;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.setLineDash([4, 4]); // Smaller dashes
-        ctx.globalAlpha = 0.5;
-        ctx.shadowBlur = 4;
+        ctx.setLineDash([5, 5]);
+        ctx.globalAlpha = 0.6;
+        ctx.shadowBlur = 8;
         ctx.shadowColor = uColor;
 
         for (let i = 0; i < userStrokes.length - 1; i++) {
@@ -412,22 +412,32 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
           
           if (!p1 || !p2) continue;
 
-          ctx.moveTo(p1.x, p1.y);
-          
+          // Draw a heart-shaped curl in the middle
           const mx = (p1.x + p2.x) / 2;
           const my = (p1.y + p2.y) / 2;
           const dist = Math.sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2);
           
-          // Deterministic randomness based on coordinates to avoid flickering
-          const hash = Math.abs((p1.x * 31 + p1.y) ^ (p2.x * 17 + p2.y));
-          const rnd = (hash % 100) / 100;
+          const hang = dist * 0.3; 
           
-          const hang = (dist * 0.15) + (rnd * 40); // Random droop
-          const sway = (rnd - 0.5) * (dist * 0.2); // Random horizontal sway
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
           
-          ctx.quadraticCurveTo(mx + sway, my + hang, p2.x, p2.y);
+          // Control points for a "heart curl"
+          const cp1x = p1.x + (mx - p1.x) * 0.5;
+          const cp1y = p1.y + hang;
+          const cp2x = p2.x - (p2.x - mx) * 0.5;
+          const cp2y = p2.y + hang;
+          
+          ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+          ctx.stroke();
+
+          // Draw a small heart in the middle of the string
+          ctx.font = '16px serif';
+          ctx.fillStyle = uColor;
+          ctx.globalAlpha = 0.8;
+          ctx.textAlign = 'center';
+          ctx.fillText('❤️', mx, my + hang/2 + 5);
         }
-        ctx.stroke();
         ctx.restore();
       });
     }

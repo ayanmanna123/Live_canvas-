@@ -2,91 +2,135 @@
 @import "tw-animate-css";
 
 @theme inline {
-  /* Material Design 3 Colors - Baseline Primary: #6750A4 */
-  --color-md-primary: oklch(0.45 0.19 285);
-  --color-md-on-primary: oklch(1 0 0);
-  --color-md-primary-container: oklch(0.88 0.08 285);
-  --color-md-on-primary-container: oklch(0.18 0.12 285);
+  /* Romantic Love Theme Colors */
+  --color-love-primary: #FFB6C1;
+  --color-love-secondary: #FFC0CB;
+  --color-love-tertiary: #E6A8D7;
+  --color-love-accent: #FFD6E8;
+  --color-love-white: #FFF0F5;
+  --color-love-deep: #8B4B62;
   
-  --color-md-secondary: oklch(0.48 0.06 285);
-  --color-md-on-secondary: oklch(1 0 0);
-  --color-md-secondary-container: oklch(0.9 0.05 285);
-  --color-md-on-secondary-container: oklch(0.15 0.05 285);
-
-  --color-md-tertiary: oklch(0.42 0.15 150);
-  --color-md-on-tertiary: oklch(1 0 0);
-  --color-md-tertiary-container: oklch(0.85 0.1 150);
-  --color-md-on-tertiary-container: oklch(0.1 0.1 150);
-
-  --color-md-error: oklch(0.5 0.25 25);
-  --color-md-on-error: oklch(1 0 0);
-  --color-md-error-container: oklch(0.9 0.1 25);
-  --color-md-on-error-container: oklch(0.15 0.1 25);
-
-  --color-md-background: oklch(0.12 0.01 285);
-  --color-md-on-background: oklch(0.95 0.01 285);
-
-  --color-md-surface: oklch(0.15 0.02 285);
-  --color-md-on-surface: oklch(0.9 0.02 285);
-  --color-md-surface-variant: oklch(0.25 0.03 285);
-  --color-md-on-surface-variant: oklch(0.85 0.03 285);
-  --color-md-outline: oklch(0.4 0.03 285);
+  --color-md-primary: var(--color-love-primary);
+  --color-md-on-primary: #8B4B62;
+  --color-md-primary-container: #FFE4E1;
+  --color-md-on-primary-container: #8B4B62;
   
-  --color-md-surface-container-lowest: oklch(0.08 0.01 285);
-  --color-md-surface-container-low: oklch(0.1 0.01 285);
-  --color-md-surface-container: oklch(0.14 0.02 285);
-  --color-md-surface-container-high: oklch(0.18 0.02 285);
-  --color-md-surface-container-highest: oklch(0.22 0.02 285);
+  --color-md-secondary: var(--color-love-tertiary);
+  --color-md-on-secondary: #ffffff;
+  --color-md-secondary-container: #F3E5F5;
+  --color-md-on-secondary-container: #4A148C;
 
-  /* Elevation Shadows */
-  --shadow-md-1: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
-  --shadow-md-2: 0 4px 8px 3px rgb(0 0 0 / 0.15), 0 1px 3px 0 rgb(0 0 0 / 0.3);
-  --shadow-md-3: 0 12px 24px 0 rgb(0 0 0 / 0.2), 0 4px 8px 3px rgb(0 0 0 / 0.1);
+  --color-md-background: #FFF0F5;
+  --color-md-on-background: #8B4B62;
+
+  --color-md-surface: rgba(255, 255, 255, 0.4);
+  --color-md-on-surface: #8B4B62;
+  --color-md-surface-variant: rgba(255, 240, 245, 0.6);
+  --color-md-on-surface-variant: #8B4B62;
+  --color-md-outline: #FFC0CB;
+
+  /* Elevation Shadows - Softer for Love Theme */
+  --shadow-md-1: 0 4px 12px 0 rgba(255, 182, 193, 0.3);
+  --shadow-md-2: 0 8px 24px 0 rgba(255, 182, 193, 0.4);
+  --shadow-md-3: 0 16px 48px 0 rgba(255, 182, 193, 0.5);
 
   /* Animation */
-  --transition-md-standard: 300ms cubic-bezier(0.2, 0, 0, 1);
-  --transition-md-emphasized: 500ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-md-standard: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-md-emphasized: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Premium Gradients */
-  --gradient-primary: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+  /* Premium Love Gradients */
+  --gradient-love: linear-gradient(135deg, #FFB6C1 0%, #E6A8D7 100%);
+  --gradient-sunset: linear-gradient(135deg, #FFB6C1 0%, #FFD6E8 50%, #FFC0CB 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
 }
 
 :root {
-  --background: var(--color-md-background);
-  --foreground: var(--color-md-on-background);
+  --background: var(--color-love-white);
+  --foreground: var(--color-love-deep);
 }
 
 @layer base {
   body {
-    @apply bg-md-background text-md-on-background font-sans;
+    @apply bg-love-white text-love-deep font-sans;
     margin: 0;
     overflow: hidden;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(350, 100%, 88%, 1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(330, 100%, 93%, 1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(300, 100%, 95%, 1) 0, transparent 50%);
   }
 }
 
 @layer utilities {
-  .md-shadow-1 { shadow: var(--shadow-md-1); }
-  .md-shadow-2 { shadow: var(--shadow-md-2); }
-  .md-shadow-3 { shadow: var(--shadow-md-3); }
+  .md-shadow-1 { box-shadow: var(--shadow-md-1); }
+  .md-shadow-2 { box-shadow: var(--shadow-md-2); }
+  .md-shadow-3 { box-shadow: var(--shadow-md-3); }
   
-  .md-transition { @apply transition-all duration-300; transition-timing-function: cubic-bezier(0.2, 0, 0, 1); }
+  .md-transition { @apply transition-all duration-300; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
 
   .glass {
-    @apply backdrop-blur-2xl border border-white/10;
-    background: rgba(15, 23, 42, 0.6);
+    @apply backdrop-blur-xl border border-white/40;
+    background: rgba(255, 255, 255, 0.5);
   }
 
   .glass-light {
-    @apply backdrop-blur-xl border border-white/5;
-    background: rgba(255, 255, 255, 0.03);
+    @apply backdrop-blur-lg border border-white/30;
+    background: rgba(255, 255, 255, 0.3);
   }
 
-  .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400;
+  .love-button {
+    @apply px-4 py-2 rounded-full font-bold text-sm transition-all active:scale-95 shadow-md hover:shadow-lg;
+    background: var(--gradient-love);
+    color: white;
+  }
+
+  .love-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-rose-400 to-purple-400;
   }
 
   .premium-shadow {
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 20px 50px rgba(255, 182, 193, 0.3), 0 0 20px rgba(255, 192, 203, 0.2);
   }
-}
+
+  .heart-pulse {
+    animation: heart-pulse 2s infinite;
+  }
+
+  @keyframes heart-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  .floating {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes bounce-fade {
+    0% { transform: scale(0) translateY(0); opacity: 0; }
+    20% { transform: scale(1.5) translateY(-20px); opacity: 1; }
+    100% { transform: scale(1) translateY(-400px); opacity: 0; }
+  }
+
+  .animate-bounce-fade {
+    animation: bounce-fade 2s ease-out forwards;
+  }
+
+  @keyframes float-up {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+  }
+  .animate-float-up {
+    animation-name: float-up;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes floating {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+}

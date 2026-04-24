@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Wand2 } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 
 const NewCanvasModal = ({ isOpen, onClose, onCreate }) => {
@@ -19,78 +19,74 @@ const NewCanvasModal = ({ isOpen, onClose, onCreate }) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div 
-        className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300"
+        className="absolute inset-0 bg-rose-950/40 backdrop-blur-md animate-in fade-in duration-500"
         onClick={onClose}
       />
       
-      <div className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)] overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="relative w-full max-w-md bg-white border border-rose-100 rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
         {/* Header Decor */}
-        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-indigo-600/20 to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-rose-100/50 to-transparent pointer-events-none" />
         
-        <div className="p-8 relative">
+        <div className="p-10 relative">
           <div className="flex justify-between items-start mb-8">
-            <div className="size-16 rounded-[1.5rem] bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/20">
-              <Sparkles className="size-8 text-white" />
+            <div className="size-20 rounded-[2rem] bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-xl shadow-rose-200/50 heart-pulse">
+              <Sparkles className="size-10 text-white" />
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <button 
               onClick={onClose}
-              className="text-slate-400 hover:text-white rounded-full hover:bg-white/5"
+              className="p-2 rounded-full hover:bg-rose-50 text-rose-300 hover:text-rose-600 transition-all"
             >
               <X className="size-6" />
-            </Button>
+            </button>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-3xl font-black text-white mb-2">New Canvas</h2>
-            <p className="text-slate-400 font-medium">Give your masterpiece a name to get started.</p>
+          <div className="mb-10">
+            <h2 className="text-4xl font-black text-rose-600 mb-2 font-serif italic tracking-tight">New Memory</h2>
+            <p className="text-rose-400 font-bold uppercase tracking-widest text-[10px]">What should we call this moment? 💞</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="canvas-name" className="text-xs font-black text-indigo-400 uppercase tracking-widest px-1">
-                Canvas Name
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-3">
+              <label htmlFor="canvas-name" className="text-[10px] font-black text-rose-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-rose-400" />
+                Memory Name
               </label>
               <div className="relative group">
                 <input
                   id="canvas-name"
                   type="text"
                   autoFocus
-                  placeholder="e.g. Brainstorm Session #1"
+                  placeholder="e.g. Our First Date"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-white/5 border-2 border-white/5 focus:border-indigo-500/50 rounded-2xl px-6 py-4 text-white placeholder:text-slate-600 outline-none transition-all duration-300 font-bold text-lg"
+                  className="w-full bg-rose-50/30 border-2 border-rose-50 focus:border-rose-200 rounded-[1.5rem] px-6 py-5 text-rose-700 placeholder:text-rose-200 outline-none transition-all duration-300 font-bold text-xl shadow-inner"
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-white/5 text-slate-500 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                  <Wand2 className="size-4" />
-                </div>
               </div>
             </div>
 
             <div className="flex gap-4 pt-4">
-              <Button 
+              <button 
                 type="button"
-                variant="ghost" 
                 onClick={onClose}
-                className="flex-1 py-7 rounded-2xl text-slate-400 font-bold hover:text-white hover:bg-white/5"
+                className="flex-1 py-5 rounded-[1.5rem] text-rose-300 font-black uppercase tracking-widest text-xs hover:text-rose-500 hover:bg-rose-50 transition-all"
               >
-                Cancel
-              </Button>
-              <Button 
+                Maybe Later
+              </button>
+              <button 
                 type="submit"
-                className="flex-[2] py-7 rounded-2xl bg-indigo-600 text-white font-black text-lg hover:brightness-110 shadow-2xl shadow-indigo-600/20 active:scale-[0.98] transition-all"
+                disabled={!name.trim()}
+                className="flex-[2] py-5 rounded-[1.5rem] bg-gradient-to-r from-rose-400 to-pink-500 text-white font-black uppercase tracking-widest text-xs hover:brightness-110 shadow-xl shadow-rose-200/50 active:scale-[0.98] transition-all disabled:opacity-50"
               >
-                Create Canvas
-              </Button>
+                Create Memory
+              </button>
             </div>
           </form>
         </div>
 
         {/* Footer info */}
-        <div className="bg-slate-950/50 p-6 border-t border-white/5">
-          <p className="text-[10px] text-center text-slate-500 font-medium uppercase tracking-widest">
-            Stored in Real-time Database
+        <div className="bg-rose-50/30 p-6 border-t border-rose-100">
+          <p className="text-[10px] text-center text-rose-300 font-black uppercase tracking-[0.2em]">
+            Saved in Our Private Space Forever
           </p>
         </div>
       </div>

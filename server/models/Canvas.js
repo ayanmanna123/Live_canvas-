@@ -12,7 +12,7 @@ const canvasSchema = new mongoose.Schema({
   },
   bgColor: {
     type: String,
-    default: '#0f172a'
+    default: '#EBEBEB'
   },
   createdBy: String,
   createdAt: {
