@@ -496,7 +496,8 @@ const CanvasRoom = () => {
         points: [{ x: 100 - panOffset.x, y: 100 - panOffset.y }], // Place in viewport
         imageWidth: w,
         imageHeight: h,
-        tool: 'image'
+        tool: 'image',
+        isAI: !!aiResult // Tag as AI image for transparency handling
       };
       
       if (canvasRef.current) {

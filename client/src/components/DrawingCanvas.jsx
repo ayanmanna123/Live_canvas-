@@ -437,20 +437,28 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       }
 
       if (stroke.type === 'image') {
-      if (!stroke.imageUrl) return;
-      let img = imageCache.current.get(stroke.imageUrl);
-      if (!img) {
-        img = new Image();
-        img.src = stroke.imageUrl;
-        img.onload = () => {
-          imageCache.current.set(stroke.imageUrl, img);
-          redrawCanvas(); // Re-render once loaded
-        };
-        return; // Skip drawing this frame
+        if (!stroke.imageUrl) return;
+        let img = imageCache.current.get(stroke.imageUrl);
+        if (!img) {
+          img = new Image();
+          img.src = stroke.imageUrl;
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            imageCache.current.set(stroke.imageUrl, img);
+            redrawCanvas(); // Re-render once loaded
+          };
+          return; // Skip drawing this frame
+        }
+        
+        ctx.save();
+        // If it's an AI line art drawing, use multiply to make white transparent
+        if (stroke.isAI) {
+          ctx.globalCompositeOperation = 'multiply';
+        }
+        ctx.drawImage(img, stroke.points[0].x, stroke.points[0].y, stroke.imageWidth, stroke.imageHeight);
+        ctx.restore();
+        return;
       }
-      ctx.drawImage(img, stroke.points[0].x, stroke.points[0].y, stroke.imageWidth, stroke.imageHeight);
-      return;
-    }
 
     if (stroke.points.length < 2) return;
       

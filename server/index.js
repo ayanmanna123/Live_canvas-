@@ -15,6 +15,7 @@ import ImageKit from 'imagekit';
 import multer from 'multer';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from 'axios';
+import sharp from 'sharp';
 
 dotenv.config();
 
@@ -69,17 +70,36 @@ app.post('/api/ai/generate-image', async (req, res) => {
   }
 
   try {
-    const refinePrompt = `You are a professional prompt engineer for AI image generators. 
-    The user wants to generate a simple drawing of: "${prompt}".
-    Create a highly detailed prompt for an image generator to produce a clean drawing. 
-    Requirements:
-    - Simple black and white line art, coloring book style.
-    - Clean, bold black outlines on a pure white background.
-    - No shading, no gradients, no colors, no 3D effects.
-    - Hand-drawn or vector sketch style (like MS Paint or a professional illustrator's line work).
-    - Isolated on a pure plain white background.
-    - NO TEXT in the image.
-    Return ONLY the refined prompt text, nothing else.`;
+   const refinePrompt = `You are a professional prompt engineer for AI image generators.
+
+The user wants to generate a VERY LOW-DETAIL technical outline drawing of: "${prompt}".
+
+Create a prompt for ultra-simple clean vector line art.
+
+Requirements:
+- Black outline only, no colors.
+- Transparent background (PNG style alpha background).
+- Extremely low detail architectural/technical drawing.
+- Clean 2D front elevation style.
+- Thin to medium consistent strokes.
+- Simple geometric outlines only.
+- Minimal windows, doors, and structure lines.
+- No shading, no textures, no shadows.
+- No sketch roughness, no hand-drawn wobble.
+- No perspective, no 3D rendering.
+- No realism.
+- No decorative details.
+- No furniture, people, trees, cars, sky, or surroundings.
+- No fill colors, outlines only.
+- Crisp vector/SVG-style linework.
+- CAD drawing / blueprint outline style.
+- Centered composition, isolated object only.
+- High clarity, clean edges, simple and readable.
+
+Style reference:
+MS Paint clean line drawing, beginner architectural outline, coloring-book style, technical contour illustration.
+
+Return ONLY the refined prompt text, nothing else.`;
 
     let result;
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -141,11 +161,46 @@ app.post('/api/ai/generate-image', async (req, res) => {
       throw new Error('Received invalid image data (possibly an error page)');
     }
 
-    const buffer = Buffer.from(imageResponse.data, 'binary');
-    console.log('Image received from Pollinations. Buffer size:', buffer.length);
+    let buffer = Buffer.from(imageResponse.data, 'binary');
+    console.log('Image received from Pollinations. Processing transparency...');
 
-    // 4. Upload to ImageKit for persistence
-    console.log('Uploading to ImageKit...');
+    // 4. Make background transparent using Sharp
+    try {
+      const { data, info } = await sharp(buffer)
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      // Iterate through pixels and make white/near-white transparent
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i+1];
+        const b = data[i+2];
+        // If the pixel is near white (threshold 245)
+        if (r > 245 && g > 245 && b > 245) {
+          data[i+3] = 0; // Set alpha to 0 (transparent)
+        }
+      }
+
+      // Convert back to PNG buffer
+      buffer = await sharp(data, { 
+        raw: { 
+          width: info.width, 
+          height: info.height, 
+          channels: 4 
+        } 
+      })
+      .png()
+      .toBuffer();
+      
+      console.log('Transparency processing complete.');
+    } catch (sharpError) {
+      console.error('Error processing transparency:', sharpError);
+      // Fallback to original buffer if sharp fails
+    }
+
+    // 5. Upload to ImageKit for persistence
+    console.log('Uploading transparent image to ImageKit...');
     const uploadResponse = await imagekit.upload({
       file: buffer,
       fileName: `ai_${Date.now()}.png`,
