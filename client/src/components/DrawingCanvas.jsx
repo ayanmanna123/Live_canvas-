@@ -1150,16 +1150,38 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
           onClick={(e) => e.stopPropagation()}
         >
           <div className="bg-slate-900/95 border border-white/10 backdrop-blur-xl rounded-2xl p-2 shadow-2xl flex items-center gap-1 min-w-max">
-            {/* Color Quick Picks */}
-            <div className="flex gap-1 pr-2 border-r border-white/10 mr-1">
-              {['#ffffff', '#ef4444', '#10b981', '#3b82f6', '#d946ef'].map(c => (
-                <button
-                  key={c}
-                  onClick={() => handleEditAction('color', c)}
-                  className="size-6 rounded-full border border-white/20 transition-transform hover:scale-125"
-                  style={{ backgroundColor: c }}
-                />
-              ))}
+            {/* Color Selection Grid */}
+            <div className="flex flex-col gap-1 pr-2 border-r border-white/10 mr-1">
+              <div className="flex gap-1">
+                {['#ffffff', '#1C1B1F', '#ef4444', '#f97316', '#facc15'].map(c => (
+                  <button
+                    key={c}
+                    onClick={() => handleEditAction('color', c)}
+                    className="size-5 rounded-full border border-white/20 transition-transform hover:scale-125"
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-1">
+                {['#10b981', '#06b6d4', '#3b82f6', '#6750A4', '#d946ef'].map(c => (
+                  <button
+                    key={c}
+                    onClick={() => handleEditAction('color', c)}
+                    className="size-5 rounded-full border border-white/20 transition-transform hover:scale-125"
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+                {/* Custom Color Picker */}
+                <div className="relative size-5 rounded-full overflow-hidden border border-white/20 hover:scale-125 transition-transform group">
+                  <input 
+                    type="color" 
+                    value={strokes.find(s => s.id === editMenu.strokeId)?.color || '#ffffff'}
+                    onChange={(e) => handleEditAction('color', e.target.value)}
+                    className="absolute inset-0 w-[150%] h-[150%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                  />
+                  <Palette className="absolute inset-0 m-auto size-3 text-white pointer-events-none mix-blend-difference" />
+                </div>
+              </div>
             </div>
 
             <button 
