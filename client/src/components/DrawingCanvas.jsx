@@ -398,12 +398,12 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
         ctx.beginPath();
         const uColor = getUserColor(uid);
         ctx.strokeStyle = uColor;
-        ctx.lineWidth = 4; // Slightly thicker
+        ctx.lineWidth = 1.5; // Thinner for a more delicate look
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.setLineDash([8, 6]); // More distinct dashed style
-        ctx.globalAlpha = 0.7;
-        ctx.shadowBlur = 6;
+        ctx.setLineDash([4, 4]); // Smaller dashes
+        ctx.globalAlpha = 0.5;
+        ctx.shadowBlur = 4;
         ctx.shadowColor = uColor;
 
         for (let i = 0; i < userStrokes.length - 1; i++) {
@@ -414,13 +414,18 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
 
           ctx.moveTo(p1.x, p1.y);
           
-          // Calculate control point for the "carve" (curve)
           const mx = (p1.x + p2.x) / 2;
           const my = (p1.y + p2.y) / 2;
           const dist = Math.sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2);
-          const hang = Math.min(dist * 0.25, 100); // Dynamic hang
           
-          ctx.quadraticCurveTo(mx, my + hang, p2.x, p2.y);
+          // Deterministic randomness based on coordinates to avoid flickering
+          const hash = Math.abs((p1.x * 31 + p1.y) ^ (p2.x * 17 + p2.y));
+          const rnd = (hash % 100) / 100;
+          
+          const hang = (dist * 0.15) + (rnd * 40); // Random droop
+          const sway = (rnd - 0.5) * (dist * 0.2); // Random horizontal sway
+          
+          ctx.quadraticCurveTo(mx + sway, my + hang, p2.x, p2.y);
         }
         ctx.stroke();
         ctx.restore();
