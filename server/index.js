@@ -58,19 +58,19 @@ const listModels = async () => {
     // Note: listModels might not be available on the main genAI object depending on version
     // but we can try to use it to debug
     console.log("Checking available models...");
-  } catch (e) {}
+  } catch (e) { }
 };
 listModels();
 
 app.post('/api/ai/generate-image', async (req, res) => {
   const { prompt } = req.body;
-  
+
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
 
   try {
-   const refinePrompt = `You are a professional prompt engineer for AI image generators.
+    const refinePrompt = `You are a professional prompt engineer for AI image generators.
 
 The user wants to generate a VERY LOW-DETAIL technical outline drawing of: "${prompt}".
 
@@ -103,17 +103,17 @@ Return ONLY the refined prompt text, nothing else.`;
 
     let result;
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+
     // Retry logic for 503/429 errors
     let lastErr;
     for (let i = 0; i < 3; i++) {
       try {
         result = await model.generateContent(refinePrompt);
-        break; 
+        break;
       } catch (err) {
         lastErr = err;
         if ((err.status === 503 || err.status === 429) && i < 2) {
-          console.warn(`Gemini busy (Attempt ${i+1}/3). Retrying in 2s...`);
+          console.warn(`Gemini busy (Attempt ${i + 1}/3). Retrying in 2s...`);
           await new Promise(resolve => setTimeout(resolve, 2000));
           continue;
         }
@@ -143,7 +143,7 @@ Return ONLY the refined prompt text, nothing else.`;
 
     // 3. Fetch the image buffer
     console.log('Fetching image from Pollinations...');
-    const imageResponse = await axios.get(imageUrl, { 
+    const imageResponse = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -174,25 +174,25 @@ Return ONLY the refined prompt text, nothing else.`;
       // Iterate through pixels and make white/near-white transparent
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
-        const g = data[i+1];
-        const b = data[i+2];
+        const g = data[i + 1];
+        const b = data[i + 2];
         // If the pixel is near white (threshold 245)
         if (r > 245 && g > 245 && b > 245) {
-          data[i+3] = 0; // Set alpha to 0 (transparent)
+          data[i + 3] = 0; // Set alpha to 0 (transparent)
         }
       }
 
       // Convert back to PNG buffer
-      buffer = await sharp(data, { 
-        raw: { 
-          width: info.width, 
-          height: info.height, 
-          channels: 4 
-        } 
+      buffer = await sharp(data, {
+        raw: {
+          width: info.width,
+          height: info.height,
+          channels: 4
+        }
       })
-      .png()
-      .toBuffer();
-      
+        .png()
+        .toBuffer();
+
       console.log('Transparency processing complete.');
     } catch (sharpError) {
       console.error('Error processing transparency:', sharpError);
@@ -257,13 +257,13 @@ io.on('connection', (socket) => {
 
   socket.on('join-room', async ({ roomId, userName }) => {
     if (!roomId || !userName) return;
-    
+
     socket.join(roomId);
     console.log(`${userName} (${socket.id}) joined room: ${roomId}`);
 
     // Track user in room
     if (!rooms.has(roomId)) {
-      rooms.set(roomId, { 
+      rooms.set(roomId, {
         users: new Map(),
         movie: { url: '', playing: false, currentTime: 0, masterId: null }
       });
@@ -290,7 +290,7 @@ io.on('connection', (socket) => {
           UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50),
           Canvas.find({ roomId }).sort({ createdAt: -1 })
         ]);
-        
+
         // Record this join event
         const newHistoryEntry = new UserHistory({
           roomId,
@@ -324,7 +324,7 @@ io.on('connection', (socket) => {
   socket.on('draw', async (data) => {
     const { roomId, canvasId, stroke } = data;
     if (!roomId || !stroke) return;
-    
+
     // Broadcast to others immediately for low latency
     const strokeWithUser = { ...stroke, userId: socket.id, canvasId };
     socket.to(roomId).emit('draw-remote', strokeWithUser);
@@ -334,11 +334,11 @@ io.on('connection', (socket) => {
       try {
         await Stroke.findOneAndUpdate(
           { id: stroke.id }, // Match by our custom nanoid
-          { 
+          {
             roomId,
             canvasId,
             userId: socket.id,
-            ...stroke 
+            ...stroke
           },
           { upsert: true, new: true }
         );
@@ -362,7 +362,7 @@ io.on('connection', (socket) => {
       // Notify everyone in the room about the new canvas
       const allCanvases = await Canvas.find({ roomId }).sort({ createdAt: -1 });
       io.to(roomId).emit('canvas-list-update', allCanvases);
-      
+
       // Switch everyone to the new canvas
       io.to(roomId).emit('active-canvas-update', newCanvas);
       io.to(roomId).emit('canvas-history', []); // New canvas is empty
@@ -391,7 +391,7 @@ io.on('connection', (socket) => {
 
   socket.on('clear-canvas', async ({ roomId, canvasId }) => {
     if (!roomId || !canvasId) return;
-    
+
     try {
       if (mongoose.connection.readyState === 1) {
         await Stroke.deleteMany({ roomId, canvasId });
@@ -450,9 +450,9 @@ io.on('connection', (socket) => {
         await newMessage.save();
 
         // Send push notifications to others in the room
-        const subscriptions = await PushSubscription.find({ 
-          roomId, 
-          userId: { $ne: socket.id } 
+        const subscriptions = await PushSubscription.find({
+          roomId,
+          userId: { $ne: socket.id }
         });
 
         const pushPayload = {
@@ -517,7 +517,7 @@ io.on('connection', (socket) => {
     // data: { roomId, url, playing, currentTime, action: 'play'|'pause'|'seek'|'url' }
     const { roomId } = data;
     if (!roomId || !rooms.has(roomId)) return;
-    
+
     // Update server-side state
     const room = rooms.get(roomId);
     if (data.action === 'url') {
@@ -527,7 +527,7 @@ io.on('connection', (socket) => {
     if (data.action === 'play') room.movie.playing = true;
     if (data.action === 'pause') room.movie.playing = false;
     if (data.action === 'seek') room.movie.currentTime = data.currentTime;
-    
+
     // Broadcast update including masterId to everyone in the room
     io.to(roomId).emit('movie-update-remote', { ...data, masterId: room.movie.masterId });
   });
@@ -538,10 +538,10 @@ io.on('connection', (socket) => {
       const room = rooms.get(roomId);
       room.movie.currentTime = currentTime;
       // Broadcast current master time to other participants
-      socket.to(roomId).emit('movie-update-remote', { 
-        roomId, 
-        currentTime, 
-        masterId: room.movie.masterId 
+      socket.to(roomId).emit('movie-update-remote', {
+        roomId,
+        currentTime,
+        masterId: room.movie.masterId
       });
     }
   });
@@ -558,12 +558,12 @@ io.on('connection', (socket) => {
 
   socket.on('master-time-response', (data) => {
     const { requesterId, currentTime, roomId } = data;
-    
+
     // Update server state with the master's latest time
     if (roomId && rooms.has(roomId)) {
       rooms.get(roomId).movie.currentTime = currentTime;
     }
-    
+
     if (requesterId) {
       io.to(requesterId).emit('sync-to-master', { currentTime });
     }
@@ -592,23 +592,23 @@ io.on('connection', (socket) => {
 
   socket.on('get-game-score', async ({ gameId, player1, player2 }) => {
     if (!gameId || !player1 || !player2) return;
-    
+
     // Always sort players alphabetically to find the correct record
     const players = [player1, player2].sort();
-    
+
     try {
       if (mongoose.connection.readyState === 1) {
-        let score = await GameScore.findOne({ 
-          gameId, 
-          player1: players[0], 
-          player2: players[1] 
+        let score = await GameScore.findOne({
+          gameId,
+          player1: players[0],
+          player2: players[1]
         });
-        
+
         if (!score) {
-          score = new GameScore({ 
-            gameId, 
-            player1: players[0], 
-            player2: players[1] 
+          score = new GameScore({
+            gameId,
+            player1: players[0],
+            player2: players[1]
           });
           await score.save();
         }
@@ -621,25 +621,25 @@ io.on('connection', (socket) => {
 
   socket.on('update-game-score', async ({ roomId, gameId, player1, player2, winner }) => {
     if (!gameId || !player1 || !player2) return;
-    
+
     const players = [player1, player2].sort();
-    
+
     try {
       if (mongoose.connection.readyState === 1) {
-        let score = await GameScore.findOne({ 
-          gameId, 
-          player1: players[0], 
-          player2: players[1] 
+        let score = await GameScore.findOne({
+          gameId,
+          player1: players[0],
+          player2: players[1]
         });
-        
+
         if (!score) {
-          score = new GameScore({ 
-            gameId, 
-            player1: players[0], 
-            player2: players[1] 
+          score = new GameScore({
+            gameId,
+            player1: players[0],
+            player2: players[1]
           });
         }
-        
+
         if (winner === 'Draw') {
           score.draws += 1;
         } else if (winner === players[0]) {
@@ -647,10 +647,10 @@ io.on('connection', (socket) => {
         } else if (winner === players[1]) {
           score.score2 += 1;
         }
-        
+
         score.lastPlayed = new Date();
         await score.save();
-        
+
         // Broadcast to both players in the room (or just the two players)
         if (roomId) {
           io.to(roomId).emit('receive-game-score', score);
@@ -681,11 +681,11 @@ io.on('connection', (socket) => {
       if (rooms.has(roomId)) {
         const room = rooms.get(roomId);
         const userName = room.users.get(socket.id);
-        
+
         if (userName) {
           room.users.delete(socket.id);
           console.log(`${userName} left room: ${roomId}`);
-          
+
           // Update UserHistory
           if (mongoose.connection.readyState === 1) {
             try {
@@ -699,11 +699,11 @@ io.on('connection', (socket) => {
               console.error('Error updating user history on disconnect:', err);
             }
           }
- 
+
           const usersInRoom = Array.from(room.users.entries()).map(([id, name]) => ({ id, name }));
           io.to(roomId).emit('user-list-update', usersInRoom);
           socket.to(roomId).emit('notification', { message: `${userName} left the room` });
-          
+
           // Clean up empty rooms
           if (room.users.size === 0) {
             rooms.delete(roomId);

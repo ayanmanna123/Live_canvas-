@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Save, Users, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Menu, X, Hand, CircleDot, PaintBucket, Spline, History, Video, CheckCircle2, CloudSync, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Layout } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -91,7 +91,7 @@ const Toolbar = ({
 
   const brushes = [
     { id: 'select', icon: MousePointer2, label: 'Select' },
-    { id: 'laser', icon: Wand2, label: 'Laser' },
+    { id: 'laser', icon: Target, label: 'Laser' },
     { id: 'pencil', icon: Pencil, label: 'Pencil' },
     { id: 'highlighter', icon: Highlighter, label: 'High' },
     { id: 'neon', icon: Sparkles, label: 'Neon' },
@@ -193,133 +193,128 @@ const Toolbar = ({
       </div>
 
       {/* Secondary Actions Dock (History, Video, Chat, etc.) */}
-      <div className="flex items-center gap-2 p-1.5 rounded-full glass-light pointer-events-auto animate-in slide-in-from-bottom-8 duration-700 delay-100">
-        <button onClick={onToggleHistory} className={`size-10 flex items-center justify-center rounded-full transition-all ${isHistoryOpen ? "bg-indigo-500/20 text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Activity History">
-          <History className="size-4" />
-        </button>
-        <button onClick={onToggleCall} className={`size-10 flex items-center justify-center rounded-full transition-all ${inCall ? "bg-red-500/20 text-red-400" : "text-slate-400 hover:text-white"}`} title="Video Call">
-          <Video className="size-4" />
-        </button>
-        <button onClick={() => setShowRopes(!showRopes)} className={`size-10 flex items-center justify-center rounded-full transition-all ${showRopes ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Toggle Ropes">
-          <Spline className="size-4" />
-        </button>
-        <button onClick={() => setAutoMode(!autoMode)} className={`size-10 flex items-center justify-center rounded-full transition-all ${autoMode ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Auto Shape">
-          <Wand2 className={`size-4 ${autoMode ? 'animate-pulse' : ''}`} />
-        </button>
-        <button onClick={onToggleWatchParty} className={`size-10 flex items-center justify-center rounded-full transition-all ${isWatchPartyOpen ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Watch Party">
-          <Film className="size-4" />
-        </button>
-        <button onClick={onToggleChat} className="relative size-10 flex items-center justify-center rounded-full text-slate-400 hover:text-white transition-all" title="Chat">
-          <MessageSquare className="size-4" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 size-4 flex items-center justify-center rounded-full bg-indigo-600 text-[8px] font-bold text-white ring-2 ring-slate-900">
-              {unreadCount}
-            </span>
-          )}
-        </button>
-        <button onClick={onOpenGames} className="size-10 flex items-center justify-center rounded-full text-slate-400 hover:text-white transition-all" title="Games">
-          <Gamepad2 className="size-4" />
-        </button>
-        <button onClick={() => setShowGrid(!showGrid)} className={`size-10 flex items-center justify-center rounded-full transition-all ${showGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Toggle Grid">
-          <Layout className="size-4" />
-        </button>
-        <button onClick={() => setSnapToGrid(!snapToGrid)} className={`size-10 flex items-center justify-center rounded-full transition-all ${snapToGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Snap to Grid">
-          <Wand2 className={`size-4 ${snapToGrid ? 'animate-pulse text-indigo-400' : ''}`} />
-        </button>
+      <div className="flex items-center gap-1.5 p-1.5 rounded-full glass-light border border-white/5 premium-shadow pointer-events-auto animate-in slide-in-from-bottom-8 duration-700 delay-100">
         
-        {/* Reaction Wheel */}
-        <div className="relative">
-          <button 
-            onClick={() => setIsReactionWheelOpen(!isReactionWheelOpen)}
-            className={`size-10 flex items-center justify-center rounded-full transition-all ${isReactionWheelOpen ? "bg-indigo-500 text-white" : "text-slate-400 hover:text-white"}`} 
-            title="React"
-          >
-            <Sparkles className="size-4" />
+        {/* Group 1: Collaboration */}
+        <div className="flex items-center gap-1 px-1 border-r border-white/5">
+          <button onClick={onToggleHistory} className={`size-9 flex items-center justify-center rounded-full transition-all ${isHistoryOpen ? "bg-indigo-500/20 text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Activity History">
+            <History className="size-4" />
+          </button>
+          <button onClick={onToggleCall} className={`size-9 flex items-center justify-center rounded-full transition-all ${inCall ? "bg-red-500/20 text-red-400" : "text-slate-400 hover:text-white"}`} title="Video Call">
+            <Video className="size-4" />
+          </button>
+          <button onClick={onToggleChat} className="relative size-9 flex items-center justify-center rounded-full text-slate-400 hover:text-white transition-all" title="Chat">
+            <MessageSquare className="size-4" />
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 size-4 flex items-center justify-center rounded-full bg-indigo-600 text-[8px] font-bold text-white ring-2 ring-slate-900">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Group 2: Canvas Tools */}
+        <div className="flex items-center gap-1 px-1 border-r border-white/5">
+          <button onClick={() => setShowRopes(!showRopes)} className={`size-9 flex items-center justify-center rounded-full transition-all ${showRopes ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Toggle Ropes">
+            <Spline className="size-4" />
+          </button>
+          <button onClick={() => setAutoMode(!autoMode)} className={`size-9 flex items-center justify-center rounded-full transition-all ${autoMode ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Auto Shape">
+            <Shapes className={`size-4 ${autoMode ? 'animate-pulse' : ''}`} />
+          </button>
+          <button onClick={() => setShowGrid(!showGrid)} className={`size-9 flex items-center justify-center rounded-full transition-all ${showGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Toggle Grid">
+            <Grid3X3 className="size-4" />
+          </button>
+          <button onClick={() => setSnapToGrid(!snapToGrid)} className={`size-9 flex items-center justify-center rounded-full transition-all ${snapToGrid ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Snap to Grid">
+            <Magnet className={`size-4 ${snapToGrid ? 'animate-pulse text-indigo-400' : ''}`} />
+          </button>
+        </div>
+
+        {/* Group 3: Fun & Reactions */}
+        <div className="flex items-center gap-1 px-1 border-r border-white/5">
+          <button onClick={onToggleWatchParty} className={`size-9 flex items-center justify-center rounded-full transition-all ${isWatchPartyOpen ? "text-indigo-400" : "text-slate-400 hover:text-white"}`} title="Watch Party">
+            <Film className="size-4" />
+          </button>
+          <button onClick={onOpenGames} className="size-9 flex items-center justify-center rounded-full text-slate-400 hover:text-white transition-all" title="Games">
+            <Gamepad2 className="size-4" />
           </button>
           
-          {isReactionWheelOpen && (
-            <>
-              <div 
-                className="fixed inset-0 z-[-1]" 
-                onClick={() => setIsReactionWheelOpen(false)} 
-              />
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 p-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl flex gap-2 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-2xl z-[70]">
-                {['❤️', '🔥', '👍', '😂', '😮', '🎉'].map(emoji => (
-                  <button
-                    key={emoji}
-                    onClick={() => {
-                      onReaction(emoji);
-                      setIsReactionWheelOpen(false);
-                    }}
-                    className="size-10 flex items-center justify-center rounded-xl hover:bg-white/10 hover:scale-125 transition-all text-xl"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* AI Image Generation */}
-        <div className="relative">
-          <button 
-            onClick={() => setIsAIModalOpen(!isAIModalOpen)}
-            className={`size-10 flex items-center justify-center rounded-full transition-all ${isAIModalOpen ? "bg-purple-600 text-white" : "text-slate-400 hover:text-purple-400"}`} 
-            title="AI Image Generator"
-          >
-            <Wand2 className={`size-4 ${isGenerating ? 'animate-spin' : ''}`} />
-          </button>
-
-          {isAIModalOpen && (
-            <>
-              <div 
-                className="fixed inset-0 z-[-1]" 
-                onClick={() => setIsAIModalOpen(false)} 
-              />
-              <div className="absolute bottom-full right-0 mb-4 p-4 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col gap-3 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-2xl z-[70] min-w-[300px]">
-                <div className="flex items-center gap-2 mb-1">
-                  <Wand2 className="size-4 text-purple-400" />
-                  <span className="text-xs font-black text-white uppercase tracking-widest">AI Image Gen</span>
+          <div className="relative">
+            <button 
+              onClick={() => setIsReactionWheelOpen(!isReactionWheelOpen)}
+              className={`size-9 flex items-center justify-center rounded-full transition-all ${isReactionWheelOpen ? "bg-indigo-500 text-white" : "text-slate-400 hover:text-white"}`} 
+              title="React"
+            >
+              <Smile className="size-4" />
+            </button>
+            
+            {isReactionWheelOpen && (
+              <>
+                <div className="fixed inset-0 z-[-1]" onClick={() => setIsReactionWheelOpen(false)} />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 p-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl flex gap-2 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-2xl z-[70]">
+                  {['❤️', '🔥', '👍', '😂', '😮', '🎉'].map(emoji => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        onReaction(emoji);
+                        setIsReactionWheelOpen(false);
+                      }}
+                      className="size-10 flex items-center justify-center rounded-xl hover:bg-white/10 hover:scale-125 transition-all text-xl"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
                 </div>
-                <textarea 
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="Describe what you want to draw... (e.g. 'A futuristic city')"
-                  className="bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 ring-purple-500/50 resize-none h-24"
-                  disabled={isGenerating}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAIGenerate();
-                    }
-                  }}
-                />
-                <button 
-                  onClick={handleAIGenerate}
-                  disabled={isGenerating || !aiPrompt.trim()}
-                  className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-                >
-                  {isGenerating ? (
-                    <>
-                      <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <span>Generate Image</span>
-                  )}
-                </button>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
 
-        <button onClick={onClear} className="size-10 flex items-center justify-center rounded-full text-slate-400 hover:text-red-400 transition-all" title="Clear All">
-          <Trash2 className="size-4" />
-        </button>
-        <button onClick={onShare} className="ml-2 size-10 flex items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:brightness-110 active:scale-95 transition-all" title="Share">
-          <Share2 className="size-4" />
-        </button>
+        {/* Group 4: AI & Utility */}
+        <div className="flex items-center gap-1 px-1">
+          <div className="relative">
+            <button 
+              onClick={() => setIsAIModalOpen(!isAIModalOpen)}
+              className={`size-9 flex items-center justify-center rounded-full transition-all ${isAIModalOpen ? "bg-purple-600 text-white" : "text-slate-400 hover:text-purple-400"}`} 
+              title="AI Image Generator"
+            >
+              <Wand2 className={`size-4 ${isGenerating ? 'animate-spin' : ''}`} />
+            </button>
+
+            {isAIModalOpen && (
+              <>
+                <div className="fixed inset-0 z-[-1]" onClick={() => setIsAIModalOpen(false)} />
+                <div className="absolute bottom-full right-0 mb-4 p-4 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col gap-3 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-200 shadow-2xl z-[70] min-w-[300px]">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkle className="size-4 text-purple-400" />
+                    <span className="text-xs font-black text-white uppercase tracking-widest">AI Image Gen</span>
+                  </div>
+                  <textarea 
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Describe what you want to draw..."
+                    className="bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 ring-purple-500/50 resize-none h-24"
+                    disabled={isGenerating}
+                  />
+                  <button 
+                    onClick={handleAIGenerate}
+                    disabled={isGenerating || !aiPrompt.trim()}
+                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-slate-700 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                  >
+                    {isGenerating ? "Generating..." : "Generate Image"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          <button onClick={onClear} className="size-9 flex items-center justify-center rounded-full text-slate-400 hover:text-red-400 transition-all" title="Clear All">
+            <Trash2 className="size-4" />
+          </button>
+          
+          <button onClick={onShare} className="ml-1 size-9 flex items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 hover:brightness-110 active:scale-95 transition-all" title="Share">
+            <Share2 className="size-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

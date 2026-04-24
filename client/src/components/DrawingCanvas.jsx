@@ -317,7 +317,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
         ctx.lineJoin = 'bevel';
         break;
       case 'neon':
-        ctx.shadowBlur = stroke.size * 1.5;
+        ctx.shadowBlur = Math.max(15, stroke.size * 4);
         ctx.shadowColor = stroke.color;
         break;
       case 'dotted':
