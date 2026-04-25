@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef, useReducer } from 'react';
 import { useSocket } from '../contexts/SocketContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import { nanoid } from 'nanoid';
 import { getUserColor } from '../lib/userColor';
 import { Trash2, Copy, Palette, Layers, ChevronUp, ChevronDown, Check } from 'lucide-react';
@@ -125,6 +126,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
   const [initialStroke, setInitialStroke] = useState(null);
   const [transformMode, setTransformMode] = useState(null); // 'move' | 'resize-nw' | 'resize-ne' | 'resize-sw' | 'resize-se'
   const [editMenu, setEditMenu] = useState(null); // { x, y, strokeId }
+  const [hoveredSticky, setHoveredSticky] = useState(null); // { id, content, x, y }
   const imageCache = useRef(new Map()); // url -> HTMLImageElement
 
   const currentStroke = useRef(null);
@@ -185,6 +187,11 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     if (stroke.type === 'text') {
       const box = getBoundingBox(stroke);
       return x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height;
+    }
+    if (stroke.type === 'sticky') {
+      const sx = stroke.points[0].x;
+      const sy = stroke.points[0].y;
+      return x >= sx - 15 && x <= sx + 15 && y >= sy - 15 && y <= sy + 15;
     }
     
     // Check distance to segments
@@ -538,6 +545,37 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
           ctx.restore();
         }
       }
+      
+      if (stroke.type === 'sticky') {
+        ctx.save();
+        const sx = stroke.points[0].x;
+        const sy = stroke.points[0].y;
+        
+        // Envelope Icon
+        ctx.fillStyle = '#FFE4E1'; // Misty Rose
+        ctx.strokeStyle = '#CD5C5C'; // Indian Red
+        ctx.lineWidth = 1.5;
+        
+        // Body
+        ctx.beginPath();
+        ctx.rect(sx - 12, sy - 8, 24, 16);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Flap
+        ctx.beginPath();
+        ctx.moveTo(sx - 12, sy - 8);
+        ctx.lineTo(sx, sy);
+        ctx.lineTo(sx + 12, sy - 8);
+        ctx.stroke();
+        
+        // Little Heart Seal
+        ctx.fillStyle = '#FF69B4';
+        drawHeart(ctx, sx - 2, sy - 2, 4);
+        
+        ctx.restore();
+      }
+
       ctx.stroke();
       ctx.restore();
     });
@@ -855,11 +893,24 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       return;
     }
 
-    if (!isDrawing) return;
-    if (tool === 'text') return; 
-
     const worldX = offsetX - panOffset.x;
     const worldY = offsetY - panOffset.y;
+
+    // Hover detection for Sticky Notes
+    const stickyHit = strokes.find(s => s.type === 'sticky' && isPointInStroke(worldX, worldY, s));
+    if (stickyHit) {
+      setHoveredSticky({
+        id: stickyHit.id,
+        content: stickyHit.content,
+        x: offsetX,
+        y: offsetY
+      });
+    } else {
+      setHoveredSticky(null);
+    }
+
+    if (!isDrawing) return;
+    if (tool === 'text') return;
 
     if (tool === 'select' && selectedId && isDrawing && dragStart && transformMode) {
       const dx = worldX - dragStart.x;
@@ -980,13 +1031,32 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
   };
 
   const handleCanvasClick = (e) => {
-    if (tool !== 'text') return;
+    if (tool !== 'text' && tool !== 'sticky') return;
     
     const rect = containerRef.current.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
     const worldX = snapValue(offsetX - panOffset.x);
     const worldY = snapValue(offsetY - panOffset.y);
+
+    if (tool === 'sticky') {
+      const message = window.prompt("Write a secret message for your love... 🤫");
+      if (message?.trim()) {
+        const stickyStroke = {
+          id: nanoid(),
+          userId: socket.id,
+          type: 'sticky',
+          content: message,
+          points: [{ x: worldX, y: worldY }],
+          color: '#FF69B4',
+          size: 10,
+          tool: 'sticky'
+        };
+        dispatch({ type: 'ADD_STROKE', stroke: stickyStroke });
+        socket.emit('draw', { roomId, canvasId, stroke: stickyStroke });
+      }
+      return;
+    }
 
     setTextInput({
       x: worldX + panOffset.x,
@@ -1309,6 +1379,27 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
           <div className="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 bg-white border-r border-b border-rose-100 rotate-45" />
         </div>
       )}
+
+      <AnimatePresence>
+        {hoveredSticky && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="absolute pointer-events-none z-[120]"
+            style={{ 
+              left: hoveredSticky.x, 
+              top: hoveredSticky.y,
+              transform: 'translate(-50%, -120%)' 
+            }}
+          >
+            <div className="bg-rose-500 text-white px-4 py-2 rounded-2xl shadow-xl shadow-rose-200 border-2 border-white font-bold text-sm min-w-[120px] text-center relative">
+              {hoveredSticky.content}
+              <div className="absolute left-1/2 top-full -translate-x-1/2 w-3 h-3 bg-rose-500 rotate-45 -translate-y-1/2 border-r-2 border-b-2 border-white" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });

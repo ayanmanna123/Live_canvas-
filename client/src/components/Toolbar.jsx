@@ -101,7 +101,8 @@ const Toolbar = ({
     { id: 'highlighter', icon: Highlighter, label: 'Glow Brush' },
     { id: 'neon', icon: Wand2, label: 'Magic Sparks' },
     { id: 'dotted', icon: CircleDot, label: 'Stardust' },
-    { id: 'text', icon: Type, label: 'Secret Note 💌' },
+    { id: 'text', icon: Type, label: 'Love Letter 💌' },
+    { id: 'sticky', icon: Mail, label: 'Hidden Message 🕵️' },
     { id: 'eraser', icon: Eraser, label: 'Heart Fix 💔' },
     { id: 'pan', icon: Hand, label: 'Move Love' },
   ];
