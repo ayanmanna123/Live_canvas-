@@ -13,6 +13,8 @@ import Peer from 'simple-peer';
 import VideoCall from '../components/VideoCall';
 import WatchParty from '../components/WatchParty';
 import RomanticWidgets from '../components/RomanticWidgets';
+import MemoryVault from '../components/MemoryVault';
+import CaptureModal from '../components/CaptureModal';
 import FloatingHearts from '../components/FloatingHearts';
 
 const CanvasRoom = () => {
@@ -58,6 +60,11 @@ const CanvasRoom = () => {
   const [canvasList, setCanvasList] = useState([]);
   const [isCanvasListOpen, setIsCanvasListOpen] = useState(false);
   const [isNewCanvasModalOpen, setIsNewCanvasModalOpen] = useState(false);
+  
+  // Memory Vault State
+  const [isVaultOpen, setIsVaultOpen] = useState(false);
+  const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
+  const [capturePreview, setCapturePreview] = useState(null);
   
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
@@ -444,8 +451,56 @@ const CanvasRoom = () => {
   };
 
   const handleCapture = () => {
-    const canvasName = activeCanvas?.name || 'canvas';
-    canvasRef.current?.download(`${canvasName}-${new Date().getTime()}.png`);
+    const dataUrl = canvasRef.current?.getDataURL();
+    if (dataUrl) {
+      setCapturePreview(dataUrl);
+      setIsCaptureModalOpen(true);
+    }
+  };
+
+  const handleSaveToVault = async (caption) => {
+    try {
+      setNotification('Saving to Vault...');
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      
+      // 1. Convert Data URL to Blob for upload
+      const response = await fetch(capturePreview);
+      const blob = await response.blob();
+      const file = new File([blob], `capture_${Date.now()}.png`, { type: 'image/png' });
+
+      // 2. Upload to ImageKit
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const uploadResponse = await fetch(`${backendUrl}/api/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) throw new Error('Upload failed');
+      const uploadData = await uploadResponse.json();
+      const imageUrl = uploadData.url;
+
+      // 3. Save Memory to Database
+      const saveResponse = await fetch(`${backendUrl}/api/memories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId,
+          imageUrl,
+          caption,
+          createdBy: userName
+        })
+      });
+
+      if (!saveResponse.ok) throw new Error('Failed to save memory');
+
+      setNotification('Moment preserved in Memory Vault! ✨');
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error('Error saving to vault:', error);
+      setNotification('Failed to save memory. Please try again.');
+    }
   };
 
   const handleImageUpload = async (file, aiResult = null) => {
@@ -598,6 +653,8 @@ const CanvasRoom = () => {
         snapToGrid={snapToGrid}
         setSnapToGrid={setSnapToGrid}
         onReaction={triggerReaction}
+        onCapture={handleCapture}
+        onOpenVault={() => setIsVaultOpen(true)}
       />
       
       {inCall && localStream && (
@@ -783,6 +840,19 @@ const CanvasRoom = () => {
         isOpen={isNewCanvasModalOpen}
         onClose={() => setIsNewCanvasModalOpen(false)}
         onCreate={handleCreateCanvas}
+      />
+
+      <MemoryVault 
+        isOpen={isVaultOpen}
+        onClose={() => setIsVaultOpen(false)}
+        roomId={roomId}
+      />
+
+      <CaptureModal 
+        isOpen={isCaptureModalOpen}
+        onClose={() => setIsCaptureModalOpen(false)}
+        imagePreview={capturePreview}
+        onCapture={handleSaveToVault}
       />
 
       {/* Remote Cursors Presence Layer */}

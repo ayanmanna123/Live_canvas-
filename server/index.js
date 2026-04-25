@@ -10,6 +10,7 @@ import UserHistory from './models/UserHistory.js';
 import PushSubscription from './models/PushSubscription.js';
 import GameScore from './models/GameScore.js';
 import Canvas from './models/Canvas.js';
+import Memory from './models/Memory.js';
 import { sendPushNotification } from './utils/pushNotification.js';
 import ImageKit from 'imagekit';
 import multer from 'multer';
@@ -231,6 +232,50 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
   } catch (error) {
     console.error('ImageKit upload error:', error);
     res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+app.get('/api/memories/:roomId', async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const memories = await Memory.find({ roomId }).sort({ createdAt: -1 });
+    res.json(memories);
+  } catch (error) {
+    console.error('Error fetching memories:', error);
+    res.status(500).json({ error: 'Failed to fetch memories' });
+  }
+});
+
+app.post('/api/memories', async (req, res) => {
+  try {
+    const { roomId, imageUrl, caption, createdBy } = req.body;
+    if (!roomId || !imageUrl || !createdBy) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const newMemory = new Memory({
+      roomId,
+      imageUrl,
+      caption,
+      createdBy
+    });
+
+    await newMemory.save();
+    res.json(newMemory);
+  } catch (error) {
+    console.error('Error saving memory:', error);
+    res.status(500).json({ error: 'Failed to save memory' });
+  }
+});
+
+app.delete('/api/memories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Memory.findByIdAndDelete(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting memory:', error);
+    res.status(500).json({ error: 'Failed to delete memory' });
   }
 });
 

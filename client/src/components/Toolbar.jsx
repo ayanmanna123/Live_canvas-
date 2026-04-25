@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, History as HistoryIcon } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -29,7 +29,9 @@ const Toolbar = ({
   onImageUpload,
   showGrid, setShowGrid,
   snapToGrid, setSnapToGrid,
-  onReaction
+  onReaction,
+  onCapture,
+  onOpenVault
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
@@ -144,6 +146,17 @@ const Toolbar = ({
               }}
             />
           </button>
+
+          <button
+            onClick={onCapture}
+            className="group relative size-11 flex items-center justify-center rounded-full text-rose-300 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300"
+            title="Capture Moment 📸"
+          >
+            <Camera className="size-5" />
+            <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-rose-500/90 backdrop-blur-md text-[10px] font-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg shadow-rose-200">
+              Capture Moment
+            </span>
+          </button>
         </div>
 
         {/* Color Palette */}
@@ -216,8 +229,11 @@ const Toolbar = ({
         
         {/* Group 1: Collaboration */}
         <div className="flex items-center gap-1 px-1 border-r border-rose-100">
-          <button onClick={onToggleHistory} className={`size-9 flex items-center justify-center rounded-full transition-all ${isHistoryOpen ? "bg-rose-500/20 text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Our Memories">
+          <button onClick={onToggleHistory} className={`size-9 flex items-center justify-center rounded-full transition-all ${isHistoryOpen ? "bg-rose-500/20 text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Our Edits">
             <History className="size-4" />
+          </button>
+          <button onClick={onOpenVault} className="size-9 flex items-center justify-center rounded-full text-rose-300 hover:text-rose-500 transition-all" title="Memory Vault 🏛️">
+            <Camera className="size-4" />
           </button>
           <button onClick={onToggleCall} className={`size-9 flex items-center justify-center rounded-full transition-all ${inCall ? "bg-rose-500 text-white shadow-md shadow-rose-200" : "text-rose-300 hover:text-rose-500"}`} title="Together Now 💞">
             <Video className="size-4" />

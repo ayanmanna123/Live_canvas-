@@ -242,6 +242,25 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     getPanOffset: () => panOffset,
     canUndo: undoStack.length > 0,
     canRedo: redoStack.length > 0,
+    getDataURL: () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return null;
+
+      // Create a temporary canvas to include the background
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tCtx = tempCanvas.getContext('2d');
+
+      // 1. Fill background
+      tCtx.fillStyle = bgColor;
+      tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // 2. Draw current canvas content
+      tCtx.drawImage(canvas, 0, 0);
+
+      return tempCanvas.toDataURL('image/png');
+    },
     download: (fileName = 'canvas-capture.png') => {
       const canvas = canvasRef.current;
       if (!canvas) return;
