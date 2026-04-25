@@ -29,27 +29,27 @@ const UserHistoryPanel = ({ history, isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 sm:inset-auto sm:top-24 sm:right-6 z-[60] sm:z-40 w-full sm:w-80 h-full sm:h-[calc(100vh-120px)] flex flex-col rounded-none sm:rounded-3xl bg-slate-900/95 sm:bg-slate-900/80 backdrop-blur-2xl sm:backdrop-blur-xl border-none sm:border border-white/10 shadow-2xl ring-0 sm:ring-1 ring-white/10 overflow-hidden animate-in slide-in-from-bottom sm:slide-in-from-right-5 duration-300">
+    <div className="fixed inset-0 sm:inset-auto sm:top-24 sm:right-6 z-[60] sm:z-50 w-full sm:w-80 h-full sm:h-[calc(100vh-200px)] flex flex-col rounded-none sm:rounded-[2.5rem] glass shadow-2xl border-white/50 overflow-hidden animate-in slide-in-from-bottom sm:slide-in-from-right-5 duration-700">
       {/* Header */}
-      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
-        <div className="flex items-center gap-2">
-          <History className="h-4 w-4 text-indigo-400" />
-          <h3 className="font-bold text-sm text-slate-200 uppercase tracking-wider">Attendance Log</h3>
+      <div className="p-5 border-b border-rose-100 flex items-center justify-between bg-rose-50/50">
+        <div className="flex items-center gap-3">
+          <div className="size-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+          <h3 className="font-black text-[11px] text-rose-600 uppercase tracking-[0.2em] font-sans">Attendance Log 📋</h3>
         </div>
         <button 
           onClick={onClose}
-          className="p-1 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition-colors"
+          className="p-2 rounded-full hover:bg-rose-100 text-rose-300 hover:text-rose-600 transition-all"
         >
-          <X className="h-4 w-4" />
+          <X className="size-4" />
         </button>
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar bg-rose-50/20">
         {history.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-2">
-            <History className="h-8 w-8 opacity-20" />
-            <p className="text-xs">No activity logs found.</p>
+          <div className="flex flex-col items-center justify-center h-full text-rose-300 space-y-4 opacity-40">
+            <History className="size-16 stroke-[1px] fill-rose-100" />
+            <p className="text-[10px] font-black uppercase tracking-widest">No activity logs found</p>
           </div>
         )}
         
@@ -60,39 +60,39 @@ const UserHistoryPanel = ({ history, isOpen, onClose }) => {
           return (
             <div 
               key={log._id || idx} 
-              className="p-3 rounded-2xl bg-white/5 border border-white/5 space-y-2 hover:bg-indigo-500/5 transition-all group"
+              className="p-4 rounded-[2rem] bg-white/60 border border-rose-100 space-y-3 hover:bg-white/80 transition-all group shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ color: uColor, backgroundColor: uColor }} />
-                  <span className="text-sm font-bold text-slate-100">{log.userName}</span>
+                  <span className="text-xs font-black text-rose-900 uppercase tracking-tight">{log.userName}</span>
                 </div>
                 {isActive ? (
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">
-                    <CheckCircle2 className="h-3 w-3" /> Active
+                  <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-tighter">
+                    <CheckCircle2 className="size-3" /> Active
                   </span>
                 ) : (
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                  <span className="text-[9px] font-black text-rose-400 uppercase tracking-tighter">
                     Offline
                   </span>
                 )}
               </div>
               
-              <div className="flex items-center gap-4 text-[11px]">
-                <div className="flex items-center gap-1 text-slate-400">
-                  <LogIn className="h-3 w-3 text-indigo-400" />
+              <div className="flex items-center gap-4 text-[10px]">
+                <div className="flex items-center gap-1.5 text-rose-600 font-bold">
+                  <LogIn className="size-3 text-rose-400" />
                   <span>{formatTime(log.joinedAt)}</span>
                 </div>
                 {log.leftAt && (
-                   <div className="flex items-center gap-1 text-slate-400">
-                    <LogOut className="h-3 w-3 text-rose-400" />
+                   <div className="flex items-center gap-1.5 text-rose-600 font-bold">
+                    <LogOut className="size-3 text-pink-400" />
                     <span>{formatTime(log.leftAt)}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-1 text-[10px] text-slate-500 pt-1 border-t border-white/5">
-                <Clock className="h-3 w-3" />
+              <div className="flex items-center gap-1.5 text-[9px] text-rose-400 font-black uppercase tracking-tighter pt-2 border-t border-rose-100/50">
+                <Clock className="size-3" />
                 <span>Duration: {getDuration(log.joinedAt, log.leftAt)}</span>
               </div>
             </div>
@@ -100,8 +100,8 @@ const UserHistoryPanel = ({ history, isOpen, onClose }) => {
         })}
       </div>
 
-      <div className="p-3 bg-white/5 text-center">
-        <p className="text-[10px] text-slate-500 font-medium">Logs are persistent for each room</p>
+      <div className="p-5 bg-white/60 text-center border-t border-rose-100 backdrop-blur-md">
+        <p className="text-[9px] text-rose-400 font-black uppercase tracking-[0.2em]">Logs are persistent for each room</p>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Calendar, Gift, Music, Pin, MessageCircleHeart, Sparkles } from 'lucide-react';
+import { Heart, Sparkles, MessageCircleHeart } from 'lucide-react';
 
 const RomanticWidgets = () => {
   const [daysTogether, setDaysTogether] = useState(0);
@@ -25,7 +25,7 @@ const RomanticWidgets = () => {
   };
 
   return (
-    <div className="fixed top-24 right-6 z-40 flex flex-col gap-4 pointer-events-none w-64">
+    <div className="fixed top-24 right-6 z-40 flex flex-col gap-4 pointer-events-none w-64 transition-all duration-500">
       {/* Love Counter */}
       <div className="pointer-events-auto glass rounded-3xl p-4 shadow-lg border-white/50 animate-in slide-in-from-right-10 duration-700">
         <div className="flex items-center gap-3 mb-2">
