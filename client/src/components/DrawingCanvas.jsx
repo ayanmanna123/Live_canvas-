@@ -103,7 +103,7 @@ const canvasReducer = (state, action) => {
   }
 };
 
-const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, size, tool, onPan, showRopes, autoMode, showGrid, snapToGrid }, ref) => {
+const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, size, tool, onPan, showRopes, autoMode, showGrid, snapToGrid, isHandInHand, remoteCursors }, ref) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -350,9 +350,31 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       case 'dotted':
         ctx.setLineDash([2, stroke.size * 3]);
         break;
+      case 'magic':
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#FF1493';
+        ctx.strokeStyle = '#FF69B4';
+        break;
       default:
         break;
     }
+  };
+
+  const drawHeart = (ctx, x, y, size) => {
+    ctx.save();
+    ctx.beginPath();
+    const d = size;
+    ctx.moveTo(x, y + d / 4);
+    ctx.quadraticCurveTo(x, y, x + d / 4, y);
+    ctx.quadraticCurveTo(x + d / 2, y, x + d / 2, y + d / 4);
+    ctx.quadraticCurveTo(x + d / 2, y, x + d * 3/4, y);
+    ctx.quadraticCurveTo(x + d, y, x + d, y + d / 4);
+    ctx.quadraticCurveTo(x + d, y + d / 2, x + d * 5/8, y + d * 3/4);
+    ctx.lineTo(x + d / 2, y + d);
+    ctx.lineTo(x + d * 3/8, y + d * 3/4);
+    ctx.quadraticCurveTo(x, y + d / 2, x, y + d / 4);
+    ctx.fill();
+    ctx.restore();
   };
 
   const drawGrid = (ctx) => {
@@ -506,6 +528,15 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
       for (let i = 1; i < stroke.points.length; i++) {
         ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+        
+        // Draw hearts along the path for magic tool
+        if (stroke.tool === 'magic' && i % 4 === 0) {
+          ctx.save();
+          ctx.fillStyle = stroke.color;
+          ctx.globalAlpha = 0.8;
+          drawHeart(ctx, stroke.points[i].x - stroke.size, stroke.points[i].y - stroke.size, stroke.size * 2);
+          ctx.restore();
+        }
       }
       ctx.stroke();
       ctx.restore();
@@ -898,6 +929,23 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     const snappedX = snapValue(worldX);
     const snappedY = snapValue(worldY);
     
+    // Hand-in-Hand Mode: Magnetic Brush
+    if (isHandInHand && remoteCursors) {
+      const isCloseToRemote = Object.values(remoteCursors).some(cursor => {
+        const dist = Math.sqrt(
+          (worldX - cursor.position.x) ** 2 + 
+          (worldY - cursor.position.y) ** 2
+        );
+        return dist < 120; // 120px magnetic range
+      });
+
+      if (isCloseToRemote) {
+        currentStroke.current.tool = 'magic'; // Special heart trail tool
+        currentStroke.current.color = '#FF1493'; // Deep Pink
+        currentStroke.current.size = Math.max(size, 8);
+      }
+    }
+
     // Only add point if it's different from the last one (prevents redundant points on same grid cell)
     const pts = currentStroke.current.points;
     const lastPt = pts[pts.length - 1];
@@ -920,6 +968,13 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
       ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
       ctx.stroke();
+
+      if (currentStroke.current.tool === 'magic' && pts.length % 4 === 0) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.8;
+        drawHeart(ctx, pts[pts.length - 1].x - size, pts[pts.length - 1].y - size, size * 2);
+      }
+
       ctx.restore();
     }
   };

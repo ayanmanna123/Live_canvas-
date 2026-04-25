@@ -61,6 +61,9 @@ const CanvasRoom = () => {
   const [isCanvasListOpen, setIsCanvasListOpen] = useState(false);
   const [isNewCanvasModalOpen, setIsNewCanvasModalOpen] = useState(false);
   
+  // Hand-in-Hand Mode State
+  const [isHandInHand, setIsHandInHand] = useState(false);
+  
   // Memory Vault State
   const [isVaultOpen, setIsVaultOpen] = useState(false);
   const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
@@ -655,6 +658,9 @@ const CanvasRoom = () => {
         onReaction={triggerReaction}
         onCapture={handleCapture}
         onOpenVault={() => setIsVaultOpen(true)}
+        isHandInHand={isHandInHand}
+        setIsHandInHand={setIsHandInHand}
+        remoteCursors={remoteCursors}
       />
       
       {inCall && localStream && (
@@ -820,6 +826,8 @@ const CanvasRoom = () => {
           autoMode={autoMode}
           showGrid={showGrid}
           snapToGrid={snapToGrid}
+          isHandInHand={isHandInHand}
+          remoteCursors={remoteCursors}
         />
       </div>
 
@@ -854,6 +862,53 @@ const CanvasRoom = () => {
         imagePreview={capturePreview}
         onCapture={handleSaveToVault}
       />
+
+      {/* Hand-in-Hand Mode: Linked Cursors Layer */}
+      {isHandInHand && (
+        <svg className="absolute inset-0 pointer-events-none z-20 w-full h-full">
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          {Object.entries(remoteCursors).map(([id, cursor]) => (
+            id !== socket?.id && (
+              <motion.line
+                key={`line-${id}`}
+                x1={mousePos.x}
+                y1={mousePos.y}
+                x2={cursor.position.x + panOffset.x}
+                y2={cursor.position.y + panOffset.y}
+                stroke="url(#lineGradient)"
+                strokeWidth="2"
+                strokeDasharray="5,5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{ filter: 'url(#glow)' }}
+                className="stroke-rose-400 opacity-60"
+              >
+                <animate 
+                  attributeName="stroke-dashoffset" 
+                  from="0" 
+                  to="100" 
+                  dur="10s" 
+                  repeatCount="indefinite" 
+                />
+              </motion.line>
+            )
+          ))}
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#fb7185" stopOpacity="0.8" />
+            <stop offset="50%" stopColor="#f472b6" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#fb7185" stopOpacity="0.8" />
+          </linearGradient>
+        </svg>
+      )}
 
       {/* Remote Cursors Presence Layer */}
       <div className="absolute inset-0 pointer-events-none z-30">

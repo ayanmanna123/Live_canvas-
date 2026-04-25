@@ -31,7 +31,9 @@ const Toolbar = ({
   snapToGrid, setSnapToGrid,
   onReaction,
   onCapture,
-  onOpenVault
+  onOpenVault,
+  isHandInHand,
+  setIsHandInHand
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
@@ -245,6 +247,13 @@ const Toolbar = ({
                 {unreadCount}
               </span>
             )}
+          </button>
+          <button 
+            onClick={() => setIsHandInHand(!isHandInHand)} 
+            className={`size-9 flex items-center justify-center rounded-full transition-all ${isHandInHand ? "bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]" : "text-rose-300 hover:text-rose-500"}`} 
+            title="Hand-in-Hand Mode 💞"
+          >
+            <PenTool className="size-4" />
           </button>
         </div>
 
