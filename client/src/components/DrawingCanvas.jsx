@@ -253,7 +253,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
       const tempCtx = tempCanvas.getContext('2d');
 
       // Fill background
-      tempCtx.fillStyle = bgColor || '#0f172a';
+      tempCtx.fillStyle = bgColor || '#FFF0F5';
       tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
       // Draw original canvas on top
@@ -1089,7 +1089,7 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
           
           return (
             <div 
-              className="absolute pointer-events-none border-2 border-indigo-500 bg-indigo-500/5 z-20"
+              className="absolute pointer-events-none border-2 border-rose-500 bg-rose-500/5 z-20"
               style={{
                 left: box.x + panOffset.x,
                 top: box.y + panOffset.y,
@@ -1098,13 +1098,13 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
                 transition: isDrawing && tool === 'select' ? 'none' : 'all 0.1s ease-out'
               }}
             >
-              <div className="absolute -top-2 -left-2 size-4 bg-white border-2 border-indigo-500 rounded-sm" />
-              <div className="absolute -top-2 -right-2 size-4 bg-white border-2 border-indigo-500 rounded-sm" />
-              <div className="absolute -bottom-2 -left-2 size-4 bg-white border-2 border-indigo-500 rounded-sm" />
-              <div className="absolute -bottom-2 -right-2 size-4 bg-white border-2 border-indigo-500 rounded-sm" />
+              <div className="absolute -top-2 -left-2 size-4 bg-white border-2 border-rose-500 rounded-sm" />
+              <div className="absolute -top-2 -right-2 size-4 bg-white border-2 border-rose-500 rounded-sm" />
+              <div className="absolute -bottom-2 -left-2 size-4 bg-white border-2 border-rose-500 rounded-sm" />
+              <div className="absolute -bottom-2 -right-2 size-4 bg-white border-2 border-rose-500 rounded-sm" />
               
               {/* Tooltip for selected object */}
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap">
                 {selectedStroke.type === 'text' ? 'Text Object' : 'Drawing'} Selected
               </div>
             </div>

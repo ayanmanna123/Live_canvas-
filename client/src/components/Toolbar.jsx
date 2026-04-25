@@ -153,12 +153,12 @@ const Toolbar = ({
               <button
                 key={c}
                 onClick={() => setColor(c)}
-                className={`size-6 rounded-full border-2 transition-all duration-200 hover:scale-125 ${color === c ? 'border-white ring-2 ring-indigo-500/50 scale-110' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                className={`size-6 rounded-full border-2 transition-all duration-200 hover:scale-125 ${color === c ? 'border-white ring-2 ring-rose-500/50 scale-110' : 'border-transparent opacity-60 hover:opacity-100'}`}
                 style={{ backgroundColor: c }}
               />
             ))}
           </div>
-          <div className="relative group size-8 rounded-full overflow-hidden border border-white/10 hover:border-indigo-500 transition-colors">
+          <div className="relative group size-8 rounded-full overflow-hidden border border-white/10 hover:border-rose-500 transition-colors">
             <input 
               type="color" 
               value={bgColor}
