@@ -545,8 +545,8 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('cursor-move', ({ roomId, userName, position }) => {
-    socket.to(roomId).emit('cursor-move-remote', { userId: socket.id, userName, position });
+  socket.on('cursor-move', ({ roomId, userName, position, vibe }) => {
+    socket.to(roomId).emit('cursor-move-remote', { userId: socket.id, userName, position, vibe });
   });
 
   socket.on('cursor-reaction', ({ roomId, emoji, position }) => {

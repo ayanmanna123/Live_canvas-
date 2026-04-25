@@ -33,7 +33,9 @@ const Toolbar = ({
   onCapture,
   onOpenVault,
   isHandInHand,
-  setIsHandInHand
+  setIsHandInHand,
+  isVibeOpen,
+  onToggleVibe
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
@@ -255,6 +257,13 @@ const Toolbar = ({
             title="Hand-in-Hand Mode 💞"
           >
             <PenTool className="size-4" />
+          </button>
+          <button 
+            onClick={onToggleVibe} 
+            className={`size-9 flex items-center justify-center rounded-full transition-all ${isVibeOpen ? "bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]" : "text-rose-300 hover:text-rose-500"}`} 
+            title="Our Vibe 😊"
+          >
+            <Smile className="size-4" />
           </button>
         </div>
 

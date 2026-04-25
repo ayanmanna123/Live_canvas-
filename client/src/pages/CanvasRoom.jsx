@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../contexts/SocketContext';
 import DrawingCanvas from '../components/DrawingCanvas';
@@ -15,6 +16,7 @@ import WatchParty from '../components/WatchParty';
 import RomanticWidgets from '../components/RomanticWidgets';
 import MemoryVault from '../components/MemoryVault';
 import CaptureModal from '../components/CaptureModal';
+import VibeTracker, { VIBES } from '../components/VibeTracker';
 import FloatingHearts from '../components/FloatingHearts';
 
 const CanvasRoom = () => {
@@ -63,6 +65,16 @@ const CanvasRoom = () => {
   
   // Hand-in-Hand Mode State
   const [isHandInHand, setIsHandInHand] = useState(false);
+  
+  // Vibe State
+  const [currentVibe, setCurrentVibe] = useState('happy');
+  const [isVibeOpen, setIsVibeOpen] = useState(false);
+  const vibeRef = useRef('happy');
+  
+  // Sync ref with state
+  useEffect(() => {
+    vibeRef.current = currentVibe;
+  }, [currentVibe]);
   
   // Memory Vault State
   const [isVaultOpen, setIsVaultOpen] = useState(false);
@@ -139,10 +151,10 @@ const CanvasRoom = () => {
       }
     });
 
-    socket.on('cursor-move-remote', ({ userId, userName, position }) => {
+    socket.on('cursor-move-remote', ({ userId, userName, position, vibe }) => {
       setRemoteCursors(prev => ({
         ...prev,
-        [userId]: { userName, position }
+        [userId]: { userName, position, vibe }
       }));
     });
 
@@ -224,7 +236,7 @@ const CanvasRoom = () => {
     const handleMouseMove = (e) => {
       const position = { x: e.clientX, y: e.clientY };
       setMousePos(position);
-      socket.emit('cursor-move', { roomId, userName, position });
+      socket.emit('cursor-move', { roomId, userName, position, vibe: vibeRef.current });
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -660,6 +672,8 @@ const CanvasRoom = () => {
         onOpenVault={() => setIsVaultOpen(true)}
         isHandInHand={isHandInHand}
         setIsHandInHand={setIsHandInHand}
+        isVibeOpen={isVibeOpen}
+        onToggleVibe={() => setIsVibeOpen(!isVibeOpen)}
         remoteCursors={remoteCursors}
       />
       
@@ -856,6 +870,27 @@ const CanvasRoom = () => {
         roomId={roomId}
       />
 
+      <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto">
+        <AnimatePresence>
+          {isVibeOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            >
+              <VibeTracker 
+                currentVibe={currentVibe}
+                onVibeChange={(v) => {
+                  setCurrentVibe(v);
+                  socket.emit('cursor-move', { roomId, userName, position: mousePos, vibe: v });
+                  setIsVibeOpen(false); // Close after selection
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <CaptureModal 
         isOpen={isCaptureModalOpen}
         onClose={() => setIsCaptureModalOpen(false)}
@@ -912,8 +947,11 @@ const CanvasRoom = () => {
 
       {/* Remote Cursors Presence Layer */}
       <div className="absolute inset-0 pointer-events-none z-30">
-        {Object.entries(remoteCursors).map(([id, cursor]) => (
-          id !== socket?.id && (
+        {Object.entries(remoteCursors).map(([id, cursor]) => {
+          if (id === socket?.id) return null;
+          const vibeData = VIBES.find(v => v.id === (cursor.vibe || 'happy')) || VIBES[0];
+          
+          return (
             <div 
               key={id}
               className="absolute transition-all duration-150"
@@ -923,16 +961,33 @@ const CanvasRoom = () => {
               }}
             >
               <div className="relative">
+                {/* Vibe Aura */}
+                <div 
+                  className="absolute -inset-4 rounded-full blur-xl opacity-40 animate-pulse"
+                  style={{ backgroundColor: vibeData.aura }}
+                />
+                
                 <svg width="24" height="24" viewBox="0 0 24 24" className="fill-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.4)]">
                   <path d="M5.65355 17.3039L4.46228 5.23455C4.12402 1.80214 7.86834 -0.667797 10.6133 1.49053L20.2571 9.0712C23.002 11.2295 21.8484 15.6023 18.3371 16.1438L5.65355 17.3039Z" />
                 </svg>
-                <div className="absolute left-6 top-0 whitespace-nowrap rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-black text-rose-600 shadow-md border border-rose-100">
-                  {cursor.userName} 💞
+                
+                <div className="absolute left-6 top-0 flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white/80 backdrop-blur-md px-3 py-1 text-[10px] font-black text-rose-600 shadow-md border border-rose-100">
+                  <span className="text-xs">{vibeData.emoji}</span>
+                  {cursor.userName}
                 </div>
+
+                {/* Vibe Trail Effect: Miss You */}
+                {cursor.vibe === 'missyou' && (
+                  <div className="absolute inset-0 pointer-events-none">
+                     <div className="absolute top-0 left-0 text-[10px] animate-float-up-sm opacity-0" style={{ animationDelay: '0s' }}>❤️</div>
+                     <div className="absolute top-0 left-0 text-[10px] animate-float-up-sm opacity-0" style={{ animationDelay: '0.5s' }}>💖</div>
+                     <div className="absolute top-0 left-0 text-[10px] animate-float-up-sm opacity-0" style={{ animationDelay: '1s' }}>💗</div>
+                  </div>
+                )}
               </div>
             </div>
-          )
-        ))}
+          );
+        })}
       </div>
       {/* Reactions Layer */}
       <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
