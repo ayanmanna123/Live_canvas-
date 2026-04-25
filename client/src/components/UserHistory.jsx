@@ -34,7 +34,7 @@ const UserHistoryPanel = ({ history, isOpen, onClose }) => {
       <div className="p-5 border-b border-rose-100 flex items-center justify-between bg-rose-50/50">
         <div className="flex items-center gap-3">
           <div className="size-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
-          <h3 className="font-black text-[11px] text-rose-600 uppercase tracking-[0.2em] font-sans">Attendance Log 📋</h3>
+          <h3 className="font-black text-[11px] text-rose-600 uppercase tracking-[0.2em] font-sans">Presence Journal 🖋️</h3>
         </div>
         <button 
           onClick={onClose}
@@ -101,7 +101,7 @@ const UserHistoryPanel = ({ history, isOpen, onClose }) => {
       </div>
 
       <div className="p-5 bg-white/60 text-center border-t border-rose-100 backdrop-blur-md">
-        <p className="text-[9px] text-rose-400 font-black uppercase tracking-[0.2em]">Logs are persistent for each room</p>
+        <p className="text-[9px] text-rose-400 font-black uppercase tracking-[0.2em]">Chronicles are preserved within this space</p>
       </div>
     </div>
   );

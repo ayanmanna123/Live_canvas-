@@ -439,7 +439,7 @@ const CanvasRoom = () => {
 
   const handleShare = () => {
     navigator.clipboard.writeText(roomId);
-    setNotification('Invite Link Copied to Share with Your Love! 💞');
+    setNotification('Invite Link Copied to Your Eternal Canvas! ✨');
     setTimeout(() => setNotification(null), 2000);
   };
 
@@ -623,14 +623,14 @@ const CanvasRoom = () => {
           </div>
           <div>
             <h1 className="text-lg font-black text-rose-600 leading-tight tracking-tight font-serif italic">
-              {activeCanvas?.name || 'Our Love Space ❤️'}
+              {activeCanvas?.name || 'Eternal Canvas ✨'}
             </h1>
             <div className="flex items-center gap-2">
                <p className="text-[10px] text-rose-400 font-bold uppercase tracking-widest">Memory Room: {roomId}</p>
                <div className="h-1 w-1 rounded-full bg-rose-200" />
                <div className="flex items-center gap-1.5">
                   <div className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
-                  <span className="text-[10px] font-black text-rose-500 uppercase tracking-tighter">Together Now 💞</span>
+                  <span className="text-[10px] font-black text-rose-500 uppercase tracking-tighter">Synchronized Now ✨</span>
                </div>
             </div>
           </div>
@@ -643,7 +643,7 @@ const CanvasRoom = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-2xl hover:bg-rose-50 text-rose-400 hover:text-rose-600 transition-all font-bold"
           >
             <History className="size-4" />
-            <span className="text-[11px] uppercase tracking-widest">Love Story</span>
+            <span className="text-[11px] uppercase tracking-widest">Our Journey</span>
           </button>
           
           <button 
@@ -651,7 +651,7 @@ const CanvasRoom = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-2xl hover:bg-rose-50 text-rose-400 hover:text-rose-600 transition-all font-bold"
           >
             <Camera className="size-4" />
-            <span className="text-[11px] uppercase tracking-widest">Snapshot</span>
+            <span className="text-[11px] uppercase tracking-widest">Preserve Frame</span>
           </button>
 
           <button 
@@ -659,7 +659,7 @@ const CanvasRoom = () => {
             className="px-6 py-2 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-500 text-white font-black text-[11px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-rose-200/50 flex items-center gap-2"
           >
             <Plus className="size-4 stroke-[3px]" />
-            <span>Create Memory</span>
+            <span>Preserve Moment</span>
           </button>
 
           <div className="w-px h-6 bg-rose-100 mx-1" />
@@ -697,7 +697,7 @@ const CanvasRoom = () => {
                <div className="mt-4 space-y-2 glass p-4 rounded-3xl min-w-[180px] animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl border-white/60">
                   <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
                     <span className="size-1.5 rounded-full bg-rose-400" />
-                    {users.length} Hearts Connected
+                    {users.length} Souls Synchronized
                   </p>
                   {users.map((user) => (
                     <div key={user.id} className="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-rose-50 transition-colors">

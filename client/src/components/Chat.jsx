@@ -57,7 +57,7 @@ const Chat = ({ socket, roomId, userName, isOpen, onClose }) => {
       <div className="p-5 border-b border-rose-100 flex items-center justify-between bg-rose-50/50">
         <div className="flex items-center gap-3">
           <div className="size-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
-          <h3 className="font-black text-[11px] text-rose-600 uppercase tracking-[0.2em] font-sans">Secret Letters 💌</h3>
+          <h3 className="font-black text-[11px] text-rose-600 uppercase tracking-[0.2em] font-sans">Private Exchange ✉️</h3>
         </div>
         <button 
           onClick={onClose}
@@ -72,7 +72,7 @@ const Chat = ({ socket, roomId, userName, isOpen, onClose }) => {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-rose-300 space-y-4 opacity-40">
             <Heart className="size-16 stroke-[1px] fill-rose-100" />
-            <p className="text-[10px] font-black uppercase tracking-widest">No letters sent yet</p>
+            <p className="text-[10px] font-black uppercase tracking-widest">The silence of a new beginning...</p>
           </div>
         )}
         {messages.map((msg, idx) => {
@@ -105,7 +105,7 @@ const Chat = ({ socket, roomId, userName, isOpen, onClose }) => {
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Write a love letter..."
+            placeholder="Compose a reflection..."
             className="flex-1 rounded-2xl bg-white border-2 border-rose-50 px-5 py-3 text-xs text-rose-700 placeholder:text-rose-300 focus:outline-none focus:border-rose-300 focus:ring-4 focus:ring-rose-200/20 transition-all font-bold shadow-inner"
           />
           <button

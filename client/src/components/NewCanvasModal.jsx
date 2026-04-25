@@ -41,22 +41,22 @@ const NewCanvasModal = ({ isOpen, onClose, onCreate }) => {
           </div>
 
           <div className="mb-10">
-            <h2 className="text-4xl font-black text-rose-600 mb-2 font-serif italic tracking-tight">New Memory</h2>
-            <p className="text-rose-400 font-bold uppercase tracking-widest text-[10px]">What should we call this moment? 💞</p>
+            <h2 className="text-4xl font-black text-rose-600 mb-2 font-serif italic tracking-tight">New Chapter</h2>
+            <p className="text-rose-400 font-bold uppercase tracking-widest text-[10px]">Designate a title for this shared reflection. ✨</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-3">
               <label htmlFor="canvas-name" className="text-[10px] font-black text-rose-400 uppercase tracking-widest px-1 flex items-center gap-2">
                 <span className="size-1.5 rounded-full bg-rose-400" />
-                Memory Name
+                Chronicle Title
               </label>
               <div className="relative group">
                 <input
                   id="canvas-name"
                   type="text"
                   autoFocus
-                  placeholder="e.g. Our First Date"
+                  placeholder="e.g. Initial Discovery"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-rose-50/30 border-2 border-rose-50 focus:border-rose-200 rounded-[1.5rem] px-6 py-5 text-rose-700 placeholder:text-rose-200 outline-none transition-all duration-300 font-bold text-xl shadow-inner"
@@ -70,14 +70,14 @@ const NewCanvasModal = ({ isOpen, onClose, onCreate }) => {
                 onClick={onClose}
                 className="flex-1 py-5 rounded-[1.5rem] text-rose-300 font-black uppercase tracking-widest text-xs hover:text-rose-500 hover:bg-rose-50 transition-all"
               >
-                Maybe Later
+                Defer
               </button>
               <button 
                 type="submit"
                 disabled={!name.trim()}
                 className="flex-[2] py-5 rounded-[1.5rem] bg-gradient-to-r from-rose-400 to-pink-500 text-white font-black uppercase tracking-widest text-xs hover:brightness-110 shadow-xl shadow-rose-200/50 active:scale-[0.98] transition-all disabled:opacity-50"
               >
-                Create Memory
+                Commence Journey
               </button>
             </div>
           </form>
@@ -86,7 +86,7 @@ const NewCanvasModal = ({ isOpen, onClose, onCreate }) => {
         {/* Footer info */}
         <div className="bg-rose-50/30 p-6 border-t border-rose-100">
           <p className="text-[10px] text-center text-rose-300 font-black uppercase tracking-[0.2em]">
-            Saved in Our Private Space Forever
+            Archived within our private chronicles forever
           </p>
         </div>
       </div>
