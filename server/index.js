@@ -68,6 +68,15 @@ app.get('/api/music/search', async (req, res) => {
   }
 });
 
+app.get('/api/music/all', async (req, res) => {
+  try {
+    const tracks = await MusicTrack.find().sort({ createdAt: -1 });
+    res.json(tracks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/music/upload', upload.single('audio'), async (req, res) => {
   try {
     const { uploadedBy } = req.body;

@@ -22,6 +22,7 @@ import GiftPopup from '../components/GiftPopup';
 import GiftBox from '../components/GiftBox';
 import GiftRevealModal from '../components/GiftRevealModal';
 import MusicPlayer from '../components/MusicPlayer';
+import MusicLibrary from '../components/MusicLibrary';
 
 const CanvasRoom = () => {
   const { roomId } = useParams();
@@ -64,6 +65,8 @@ const CanvasRoom = () => {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicTime, setMusicTime] = useState(0);
   const [musicMasterId, setMusicMasterId] = useState(null);
+  const [isMusicLibraryOpen, setIsMusicLibraryOpen] = useState(false);
+  const [playlist, setPlaylist] = useState([]);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
   // Canvas Management State
@@ -613,6 +616,62 @@ const CanvasRoom = () => {
     }, 2000);
   };
 
+  const handlePlayTrack = (track, newPlaylist = null) => {
+    if (!socket) return;
+    
+    if (newPlaylist) {
+      setPlaylist(newPlaylist);
+    }
+
+    const data = { 
+      url: track.url, 
+      title: track.title, 
+      artist: track.artist, 
+      thumbnail: track.thumbnail, 
+      roomId, 
+      action: 'url' 
+    };
+    
+    setMusicData(data);
+    setMusicPlaying(true);
+    socket.emit('music-update', data);
+    socket.emit('music-update', { roomId, action: 'play' });
+  };
+
+  const handleTrackEnd = () => {
+    if (playlist.length > 0) {
+      const currentIndex = playlist.findIndex(t => t.url === musicData.url);
+      if (currentIndex !== -1 && currentIndex < playlist.length - 1) {
+        handlePlayTrack(playlist[currentIndex + 1]);
+      } else if (currentIndex === playlist.length - 1) {
+        // Loop back to start or stop
+        handlePlayTrack(playlist[0]);
+      }
+    } else {
+      setMusicPlaying(false);
+    }
+  };
+
+  const handleSkipNext = () => {
+    if (playlist.length > 0) {
+      const currentIndex = playlist.findIndex(t => t.url === musicData.url);
+      if (currentIndex !== -1) {
+        const nextIndex = (currentIndex + 1) % playlist.length;
+        handlePlayTrack(playlist[nextIndex]);
+      }
+    }
+  };
+
+  const handleSkipPrev = () => {
+    if (playlist.length > 0) {
+      const currentIndex = playlist.findIndex(t => t.url === musicData.url);
+      if (currentIndex !== -1) {
+        const prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+        handlePlayTrack(playlist[prevIndex]);
+      }
+    }
+  };
+
   const handleShare = () => {
     navigator.clipboard.writeText(roomId);
     setNotification('Invite Link Copied to Your Eternal Canvas! ✨');
@@ -833,6 +892,8 @@ const CanvasRoom = () => {
         remoteCursors={remoteCursors}
         onToggleMusic={() => setIsMusicPlayerOpen(!isMusicPlayerOpen)}
         isMusicOpen={isMusicPlayerOpen}
+        onToggleMusicLibrary={() => setIsMusicLibraryOpen(!isMusicLibraryOpen)}
+        isMusicLibraryOpen={isMusicLibraryOpen}
       />
       
       {inCall && localStream && (
@@ -861,6 +922,16 @@ const CanvasRoom = () => {
         currentTime={musicTime}
         setCurrentTime={setMusicTime}
         masterId={musicMasterId}
+        onTrackEnd={handleTrackEnd}
+        onSkipNext={handleSkipNext}
+        onSkipPrev={handleSkipPrev}
+      />
+
+      <MusicLibrary 
+        isOpen={isMusicLibraryOpen}
+        onClose={() => setIsMusicLibraryOpen(false)}
+        onPlayTrack={handlePlayTrack}
+        currentTrackUrl={musicData?.url}
       />
 
       {/* Header Bar */}

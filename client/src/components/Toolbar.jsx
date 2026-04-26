@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, Gift, Music } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, Gift, Music, ListMusic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({
@@ -39,7 +39,9 @@ const Toolbar = ({
   onOpenGiftPopup,
   hasGifts,
   onToggleMusic,
-  isMusicOpen
+  isMusicOpen,
+  onToggleMusicLibrary,
+  isMusicLibraryOpen
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
@@ -298,6 +300,13 @@ const Toolbar = ({
           </button>
           <button onClick={onOpenGames} className="size-9 flex items-center justify-center rounded-full text-rose-300 hover:text-rose-500 transition-all" title="Games">
             <Gamepad2 className="size-4" />
+          </button>
+          <button 
+            onClick={onToggleMusicLibrary} 
+            className={`size-9 flex items-center justify-center rounded-full transition-all ${isMusicLibraryOpen ? "text-rose-600 bg-rose-100" : "text-rose-300 hover:text-rose-500"}`} 
+            title="Music Library 🎵"
+          >
+            <ListMusic className={`size-4 ${isMusicLibraryOpen ? 'animate-pulse' : ''}`} />
           </button>
 
           <div className="relative">
