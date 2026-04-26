@@ -38,8 +38,6 @@ const Toolbar = ({
   onToggleVibe,
   onOpenGiftPopup,
   hasGifts,
-  onToggleMusic,
-  isMusicOpen,
   onToggleMusicLibrary,
   isMusicLibraryOpen
 }) => {
@@ -292,21 +290,18 @@ const Toolbar = ({
 
         {/* Group 3: Fun & Reactions */}
         <div className="flex items-center gap-1 px-1 border-r border-white/5">
-          <button onClick={onToggleWatchParty} className={`size-9 flex items-center justify-center rounded-full transition-all ${isWatchPartyOpen ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Watch Party">
+          <button onClick={onToggleWatchParty} className={`size-9 flex items-center justify-center rounded-full transition-all ${isWatchPartyOpen ? "text-rose-500 bg-rose-50" : "text-rose-300 hover:text-rose-500"}`} title="Watch Party">
             <Film className="size-4" />
-          </button>
-          <button onClick={onToggleMusic} className={`size-9 flex items-center justify-center rounded-full transition-all ${isMusicOpen ? "text-rose-500 bg-rose-50" : "text-rose-300 hover:text-rose-500"}`} title="Romantic Radio">
-            <Music className={`size-4 ${isMusicOpen ? 'animate-bounce' : ''}`} />
           </button>
           <button onClick={onOpenGames} className="size-9 flex items-center justify-center rounded-full text-rose-300 hover:text-rose-500 transition-all" title="Games">
             <Gamepad2 className="size-4" />
           </button>
           <button 
             onClick={onToggleMusicLibrary} 
-            className={`size-9 flex items-center justify-center rounded-full transition-all ${isMusicLibraryOpen ? "text-rose-600 bg-rose-100" : "text-rose-300 hover:text-rose-500"}`} 
-            title="Music Library 🎵"
+            className={`size-9 flex items-center justify-center rounded-full transition-all ${isMusicLibraryOpen ? "bg-rose-500 text-white shadow-lg shadow-rose-200" : "text-rose-300 hover:text-rose-500"}`} 
+            title="Music Hub 🎵"
           >
-            <ListMusic className={`size-4 ${isMusicLibraryOpen ? 'animate-pulse' : ''}`} />
+            <Music className={`size-4 ${isMusicLibraryOpen ? 'animate-bounce' : ''}`} />
           </button>
 
           <div className="relative">

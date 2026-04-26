@@ -67,6 +67,7 @@ const CanvasRoom = () => {
   const [musicMasterId, setMusicMasterId] = useState(null);
   const [isMusicLibraryOpen, setIsMusicLibraryOpen] = useState(false);
   const [playlist, setPlaylist] = useState([]);
+  const [musicVolume, setMusicVolume] = useState(0.5);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
   // Canvas Management State
@@ -890,8 +891,6 @@ const CanvasRoom = () => {
         onOpenGiftPopup={() => setIsGiftPopupOpen(true)}
         hasGifts={hasGifts}
         remoteCursors={remoteCursors}
-        onToggleMusic={() => setIsMusicPlayerOpen(!isMusicPlayerOpen)}
-        isMusicOpen={isMusicPlayerOpen}
         onToggleMusicLibrary={() => setIsMusicLibraryOpen(!isMusicLibraryOpen)}
         isMusicLibraryOpen={isMusicLibraryOpen}
       />
@@ -911,7 +910,7 @@ const CanvasRoom = () => {
       )}
 
       <MusicPlayer 
-        isOpen={isMusicPlayerOpen}
+        isOpen={false}
         onClose={() => setIsMusicPlayerOpen(false)}
         roomId={roomId}
         socket={socket}
@@ -925,6 +924,7 @@ const CanvasRoom = () => {
         onTrackEnd={handleTrackEnd}
         onSkipNext={handleSkipNext}
         onSkipPrev={handleSkipPrev}
+        volume={musicVolume}
       />
 
       <MusicLibrary 
@@ -932,6 +932,15 @@ const CanvasRoom = () => {
         onClose={() => setIsMusicLibraryOpen(false)}
         onPlayTrack={handlePlayTrack}
         currentTrackUrl={musicData?.url}
+        musicData={musicData}
+        playing={musicPlaying}
+        setPlaying={setMusicPlaying}
+        onSkipNext={handleSkipNext}
+        onSkipPrev={handleSkipPrev}
+        socket={socket}
+        roomId={roomId}
+        volume={musicVolume}
+        setVolume={setMusicVolume}
       />
 
       {/* Header Bar */}
