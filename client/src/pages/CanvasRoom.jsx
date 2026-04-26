@@ -1125,7 +1125,7 @@ const CanvasRoom = () => {
       {/* Gift Boxes on Canvas (Only Unopened) */}
       {gifts.filter(g => !g.isOpened).map((gift, index) => (
         <GiftBox 
-          key={gift._id || `canvas-gift-${index}`} 
+          key={gift._id && gift._id !== '' ? gift._id : `canvas-gift-${index}`} 
           gift={gift} 
           onOpen={handleOpenGift} 
           onDelete={handleDeleteGift}

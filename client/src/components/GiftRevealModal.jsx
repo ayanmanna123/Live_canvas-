@@ -1,9 +1,33 @@
+import { motion, AnimatePresence } from 'framer-motion';
+import Stack from './Stack';
 import React from 'react';
 import { Gift, X, Image as ImageIcon, MessageSquare, Heart } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const GiftRevealModal = ({ gift, isOpen, onClose, userName }) => {
   if (!isOpen || !gift) return null;
+
+  // Prepare images for the Stack component
+  const allImages = React.useMemo(() => {
+    const images = gift.content.imageUrls && gift.content.imageUrls.length > 0 
+      ? gift.content.imageUrls 
+      : gift.content.imageUrl || gift.content.drawingUrl 
+        ? [gift.content.imageUrl || gift.content.drawingUrl] 
+        : [];
+    // Filter out any empty strings to avoid key issues
+    return images.filter(url => url && url.trim() !== '');
+  }, [gift.content]);
+
+  // Memoize the cards as elements
+  const cards = React.useMemo(() => {
+    return allImages.map((src, i) => (
+      <img 
+        key={`img-${i}`} 
+        src={src} 
+        alt={`card-${i + 1}`} 
+        className="w-full h-full object-cover rounded-3xl pointer-events-none" 
+      />
+    ));
+  }, [allImages]);
 
   return (
     <AnimatePresence>
@@ -33,17 +57,21 @@ const GiftRevealModal = ({ gift, isOpen, onClose, userName }) => {
             </div>
 
             <div className="w-full space-y-6">
-              {(gift.content.imageUrl || gift.content.drawingUrl) && (
-                <div className="relative group max-w-full">
-                   <img 
-                     src={gift.content.imageUrl || gift.content.drawingUrl} 
-                     alt="Time Capsule Memory" 
-                     className="max-h-[400px] w-auto mx-auto rounded-3xl shadow-xl border-8 border-rose-50 object-contain"
-                   />
-                   <div className="mt-4 flex items-center justify-center gap-2 text-rose-500 font-bold bg-rose-50/50 w-fit mx-auto px-4 py-1.5 rounded-full border border-rose-100 text-[10px] uppercase tracking-widest">
-                     <ImageIcon className="size-3" />
-                     Captured Moment
-                   </div>
+              {allImages.length > 0 && (
+                <div className="w-full space-y-6 flex flex-col items-center">
+                  <div className="relative size-[320px] sm:size-[400px]">
+                    <Stack
+                      randomRotation={true}
+                      sensitivity={80}
+                      sendToBackOnClick={true}
+                      cards={cards}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-center gap-2 text-rose-500 font-bold bg-rose-50/50 w-fit mx-auto px-4 py-1.5 rounded-full border border-rose-100 text-[10px] uppercase tracking-widest">
+                    <ImageIcon className="size-3" />
+                    {allImages.length > 1 ? `Swipe to see ${allImages.length} moments` : 'Captured Moment'}
+                  </div>
                 </div>
               )}
 

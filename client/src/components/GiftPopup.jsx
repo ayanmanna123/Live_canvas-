@@ -10,8 +10,9 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
   const [message, setMessage] = useState('');
   const [unlockDate, setUnlockDate] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [filePreview, setFilePreview] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [filePreviews, setFilePreviews] = useState([]);
+  const [replacingIndex, setReplacingIndex] = useState(null);
   const [viewingGift, setViewingGift] = useState(null);
   const [openingGiftId, setOpeningGiftId] = useState(null);
   const fileInputRef = useRef(null);
@@ -30,19 +31,67 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
   if (!isOpen) return null;
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) {
+      setReplacingIndex(null);
+      return;
+    }
+
+    // Replacement Logic
+    if (replacingIndex !== null) {
+      const file = files[0];
       if (file.size > 5 * 1024 * 1024) {
         alert('File is too large! Please select an image under 5MB.');
+        setReplacingIndex(null);
         return;
       }
-      setSelectedFile(file);
+
+      const newFiles = [...selectedFiles];
+      newFiles[replacingIndex] = file;
+      setSelectedFiles(newFiles);
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFilePreview(reader.result);
+        const newPreviews = [...filePreviews];
+        newPreviews[replacingIndex] = reader.result;
+        setFilePreviews(newPreviews);
       };
       reader.readAsDataURL(file);
+      
+      setReplacingIndex(null);
+      e.target.value = '';
+      return;
     }
+
+    // Multi-Add Logic
+    if (selectedFiles.length + files.length > 5) {
+      alert('You can only upload up to 5 pictures per gift.');
+      return;
+    }
+
+    const newFiles = [...selectedFiles];
+
+    files.forEach(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`${file.name} is too large! Please select images under 5MB.`);
+        return;
+      }
+      newFiles.push(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFilePreviews(prev => [...prev, reader.result]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    setSelectedFiles(newFiles);
+    // Reset input value so the same file can be selected again if removed
+    e.target.value = '';
+  };
+
+  const removeFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setFilePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -60,27 +109,30 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
     setIsSending(true);
     
     try {
-      let imageUrl = null;
+      const imageUrls = [];
 
-      if (selectedFile) {
-        const formData = new FormData();
-        formData.append('image', selectedFile);
-        
-        const uploadRes = await fetch(`${API_URL}/api/upload`, {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (!uploadRes.ok) throw new Error('Upload failed');
-        const uploadData = await uploadRes.json();
-        imageUrl = uploadData.url;
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const formData = new FormData();
+          formData.append('image', file);
+          
+          const uploadRes = await fetch(`${API_URL}/api/upload`, {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (!uploadRes.ok) throw new Error('Upload failed');
+          const uploadData = await uploadRes.json();
+          imageUrls.push(uploadData.url);
+        }
       }
 
       await onSend({
         contentType: 'capsule',
         content: {
           message: message.trim() || null,
-          imageUrl: imageUrl
+          imageUrl: imageUrls[0] || null, // For backward compatibility
+          imageUrls: imageUrls
         },
         unlockDate: new Date(unlockDate),
       });
@@ -98,8 +150,8 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
   const resetForm = () => {
     setMessage('');
     setUnlockDate('');
-    setSelectedFile(null);
-    setFilePreview(null);
+    setSelectedFiles([]);
+    setFilePreviews([]);
   };
 
   const sortedGifts = [...gifts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -164,38 +216,52 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-rose-400 uppercase tracking-widest px-1 flex items-center gap-2">
                     <ImageIcon className="size-3" />
-                    Add a Photo
+                    Captured Moments ({selectedFiles.length}/5)
                   </label>
-                  <div 
-                    onClick={() => fileInputRef.current.click()}
-                    className={`relative aspect-video rounded-[2rem] border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-3 overflow-hidden ${filePreview ? 'border-rose-200 bg-rose-50' : 'border-rose-100 bg-rose-50/50 hover:bg-rose-50 hover:border-rose-200'}`}
-                  >
-                    {filePreview ? (
-                      <>
-                        <img src={filePreview} alt="Preview" className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                          <div className="flex items-center gap-2 text-white font-black text-xs uppercase tracking-widest">
-                            <Upload className="size-4" />
-                            Change Picture
-                          </div>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    {filePreviews.map((preview, index) => (
+                      <motion.div 
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative aspect-square rounded-2xl overflow-hidden border-2 border-rose-100 group cursor-pointer"
+                        onClick={() => {
+                          // Setting a temp state to know which index to replace
+                          setReplacingIndex(index);
+                          fileInputRef.current.click();
+                        }}
+                      >
+                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Upload className="size-4 text-white mb-1" />
+                          <span className="text-[8px] font-black text-white uppercase tracking-tighter">Replace</span>
                         </div>
-                        <div className="absolute top-4 right-4 bg-emerald-500 text-white p-1.5 rounded-full shadow-lg">
-                          <CheckCircle2 className="size-4" />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="size-12 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-500">
-                          <Upload className="size-6" />
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-bold text-rose-600">Choose a Picture</p>
-                          <p className="text-[10px] text-rose-400 font-medium">Capture a moment to lock away</p>
-                        </div>
-                      </>
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFile(index);
+                          }}
+                          className="absolute top-1 right-1 size-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </motion.div>
+                    ))}
+                    
+                    {selectedFiles.length < 5 && (
+                      <div 
+                        onClick={() => fileInputRef.current.click()}
+                        className="aspect-square rounded-2xl border-2 border-dashed border-rose-100 bg-rose-50/50 hover:bg-rose-50 hover:border-rose-200 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 text-rose-400"
+                      >
+                        <Plus className="size-5" />
+                        <span className="text-[8px] font-black uppercase tracking-tighter">Add Photo</span>
+                      </div>
                     )}
                   </div>
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                  
+                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" multiple />
                 </div>
 
                 {/* Message Area */}
@@ -253,7 +319,7 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
 
                     return (
                       <motion.div
-                        key={gift._id || `gift-${gift.createdAt}-${index}`}
+                        key={gift._id && gift._id !== '' ? gift._id : `gift-temp-${gift.createdAt || 'no-date'}-${index}`}
                         layout
                         className={`p-5 rounded-3xl border-2 transition-all ${gift.isOpened ? 'bg-rose-50/30 border-rose-100' : 'bg-white border-rose-50 shadow-sm'}`}
                       >

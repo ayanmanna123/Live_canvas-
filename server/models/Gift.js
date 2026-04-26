@@ -8,6 +8,7 @@ const GiftSchema = new mongoose.Schema({
   content: {
     message: { type: String },
     imageUrl: { type: String },
+    imageUrls: [{ type: String }],
     drawingUrl: { type: String } // Keeping for legacy/compatibility
   },
   contentType: { type: String, enum: ['drawing', 'message', 'picture', 'capsule'], required: true },
