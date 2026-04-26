@@ -11,6 +11,7 @@ import PushSubscription from './models/PushSubscription.js';
 import GameScore from './models/GameScore.js';
 import Canvas from './models/Canvas.js';
 import Memory from './models/Memory.js';
+import Gift from './models/Gift.js';
 import { sendPushNotification } from './utils/pushNotification.js';
 import ImageKit from 'imagekit';
 import multer from 'multer';
@@ -329,11 +330,12 @@ io.on('connection', (socket) => {
           await activeCanvas.save();
         }
 
-        const [strokes, messages, history, allCanvases] = await Promise.all([
+        const [strokes, messages, history, allCanvases, gifts] = await Promise.all([
           Stroke.find({ roomId, canvasId: activeCanvas._id }).sort({ createdAt: 1 }),
           Message.find({ roomId }).sort({ createdAt: 1 }).limit(100),
           UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50),
-          Canvas.find({ roomId }).sort({ createdAt: -1 })
+          Canvas.find({ roomId }).sort({ createdAt: -1 }),
+          Gift.find({ roomId })
         ]);
 
         // Record this join event
@@ -350,6 +352,7 @@ io.on('connection', (socket) => {
         socket.emit('canvas-history', strokes);
         socket.emit('chat-history', messages);
         socket.emit('movie-update-remote', rooms.get(roomId).movie);
+        socket.emit('gift-list-update', gifts);
         io.to(roomId).emit('user-history-update', await UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50));
       } catch (error) {
         console.error('Error fetching room history:', error);
@@ -733,6 +736,98 @@ io.on('connection', (socket) => {
       } catch (error) {
         console.error('Error fetching user history:', error);
       }
+    }
+  });
+
+  // --- Gift Events ---
+  socket.on('send-gift', async (giftData) => {
+    const { roomId, senderId, senderName, content, contentType, unlockDate, position } = giftData;
+    if (!roomId || !senderId || !content || !unlockDate) return;
+
+    try {
+      if (mongoose.connection.readyState === 1) {
+        const newGift = new Gift({
+          roomId,
+          senderId,
+          senderName,
+          content,
+          contentType,
+          unlockDate,
+          position: position || { x: Math.random() * 500 + 100, y: Math.random() * 300 + 100 }
+        });
+        await newGift.save();
+
+        // Notify everyone in the room
+        io.to(roomId).emit('receive-gift', newGift);
+        
+        // Update gift list for everyone
+        const allGifts = await Gift.find({ roomId });
+        io.to(roomId).emit('gift-list-update', allGifts);
+      }
+    } catch (error) {
+      console.error('Error sending gift:', error);
+    }
+  });
+
+  socket.on('open-gift', async ({ giftId, roomId }) => {
+    if (!giftId || !roomId) return;
+
+    try {
+      if (mongoose.connection.readyState === 1) {
+        const gift = await Gift.findByIdAndUpdate(giftId, { isOpened: true }, { new: true });
+        if (gift) {
+          // Add to Memory Vault automatically
+          // Add to Memory Vault automatically
+          let vaultImageUrl = '';
+          let vaultCaption = '';
+          let vaultContentType = 'image';
+
+          if (gift.contentType === 'capsule') {
+            vaultImageUrl = gift.content.imageUrl || '';
+            vaultCaption = gift.content.message || `Time Capsule from ${gift.senderName}`;
+            vaultContentType = gift.content.imageUrl ? 'image' : 'message';
+          } else {
+            // Legacy/Fallback for old gift types
+            vaultImageUrl = gift.contentType === 'message' ? '' : gift.content;
+            vaultCaption = gift.contentType === 'message' ? gift.content : `Time Capsule from ${gift.senderName}`;
+            vaultContentType = gift.contentType === 'message' ? 'message' : 'image';
+          }
+
+          const giftMemory = new Memory({
+            roomId,
+            imageUrl: vaultImageUrl,
+            caption: vaultCaption,
+            createdBy: gift.senderName,
+            type: 'gift',
+            contentType: vaultContentType
+          });
+          await giftMemory.save();
+
+          // Broadcast that it's opened and update memory vault for everyone
+          io.to(roomId).emit('gift-opened', gift);
+          
+          const memories = await Memory.find({ roomId }).sort({ createdAt: -1 });
+          io.to(roomId).emit('memories-update', memories); // We need to add this listener on client
+          
+          const allGifts = await Gift.find({ roomId });
+          io.to(roomId).emit('gift-list-update', allGifts);
+        }
+      }
+    } catch (error) {
+      console.error('Error opening gift:', error);
+    }
+  });
+
+  socket.on('delete-gift', async ({ giftId, roomId }) => {
+    if (!giftId || !roomId) return;
+    try {
+      if (mongoose.connection.readyState === 1) {
+        await Gift.findByIdAndDelete(giftId);
+        const allGifts = await Gift.find({ roomId });
+        io.to(roomId).emit('gift-list-update', allGifts);
+      }
+    } catch (error) {
+      console.error('Error deleting gift:', error);
     }
   });
 

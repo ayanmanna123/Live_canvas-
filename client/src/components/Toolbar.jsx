@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({ 
@@ -35,7 +35,9 @@ const Toolbar = ({
   isHandInHand,
   setIsHandInHand,
   isVibeOpen,
-  onToggleVibe
+  onToggleVibe,
+  onOpenGiftPopup,
+  hasGifts
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
@@ -368,6 +370,19 @@ const Toolbar = ({
             <Trash2 className="size-4" />
           </button>
           
+          <div className="relative">
+            <button 
+              onClick={onOpenGiftPopup} 
+              className={`size-9 flex items-center justify-center rounded-full transition-all ${hasGifts ? "bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.6)] animate-pulse" : "text-rose-300 hover:text-rose-500"}`} 
+              title="Time Capsule 🎁"
+            >
+              <Gift className={`size-4 ${hasGifts ? 'animate-bounce' : ''}`} />
+            </button>
+            {hasGifts && (
+              <span className="absolute -top-1 -right-1 size-3 bg-rose-500 rounded-full border-2 border-white ring-2 ring-rose-500 animate-ping" />
+            )}
+          </div>
+
           <button onClick={onShare} className="ml-1 size-9 flex items-center justify-center rounded-full bg-gradient-to-tr from-rose-400 to-pink-500 text-white shadow-lg shadow-rose-200/50 hover:brightness-110 active:scale-95 transition-all" title="Share with My Love 💞">
             <Share2 className="size-4" />
           </button>

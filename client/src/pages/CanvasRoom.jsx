@@ -18,6 +18,8 @@ import MemoryVault from '../components/MemoryVault';
 import CaptureModal from '../components/CaptureModal';
 import VibeTracker, { VIBES } from '../components/VibeTracker';
 import FloatingHearts from '../components/FloatingHearts';
+import GiftPopup from '../components/GiftPopup';
+import GiftBox from '../components/GiftBox';
 
 const CanvasRoom = () => {
   const { roomId } = useParams();
@@ -80,6 +82,11 @@ const CanvasRoom = () => {
   const [isVaultOpen, setIsVaultOpen] = useState(false);
   const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
   const [capturePreview, setCapturePreview] = useState(null);
+  
+  // Gift State
+  const [gifts, setGifts] = useState([]);
+  const [isGiftPopupOpen, setIsGiftPopupOpen] = useState(false);
+  const [hasGifts, setHasGifts] = useState(false);
   
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
@@ -229,6 +236,31 @@ const CanvasRoom = () => {
       setCanvasList(list);
     });
 
+    socket.on('gift-list-update', (updatedGifts) => {
+      setGifts(updatedGifts);
+      // Check if there are any un-opened gifts for this user
+      const unOpened = updatedGifts.filter(g => !g.isOpened && g.senderId !== socket.id);
+      setHasGifts(unOpened.length > 0);
+    });
+
+    socket.on('receive-gift', (gift) => {
+      if (gift.senderId !== socket.id) {
+        setNotification(`You have a new Time Capsule from ${gift.senderName}! 🎁`);
+        setHasGifts(true);
+        // Play sound
+        notificationAudio.current.play().catch(e => console.log('Audio play failed:', e));
+      }
+    });
+
+    socket.on('gift-opened', (openedGift) => {
+      setGifts(prev => prev.map(g => g._id === openedGift._id ? openedGift : g));
+    });
+
+    socket.on('memories-update', (updatedMemories) => {
+      // This will ensure the vault updates in real-time if we want to sync state
+      // For now, MemoryVault fetches on open, but this is good for consistency
+    });
+
     socket.on('clear-canvas-remote', ({ canvasId }) => {
       // Handled by DrawingCanvas typically
     });
@@ -254,6 +286,10 @@ const CanvasRoom = () => {
       socket.off('sync-to-master');
       socket.off('canvas-list-update');
       socket.off('active-canvas-update');
+      socket.off('gift-list-update');
+      socket.off('receive-gift');
+      socket.off('gift-opened');
+      socket.off('memories-update');
     };
   }, [socket, roomId, userName, localStream, inCall]);
 
@@ -448,6 +484,66 @@ const CanvasRoom = () => {
   const handleBgChange = (newColor) => {
     setBgColor(newColor);
     socket.emit('change-background', { roomId, color: newColor });
+  };
+
+  const handleSendGift = async (giftData) => {
+    if (!socket) return;
+    
+    let content = giftData.content;
+    
+    // If it's a drawing, capture the canvas state
+    if (giftData.contentType === 'drawing') {
+      try {
+        const drawingData = canvasRef.current.getCanvas().toDataURL('image/png');
+        // Upload the drawing to ImageKit first
+        const blob = await (await fetch(drawingData)).blob();
+        const file = new File([blob], `gift_${Date.now()}.png`, { type: 'image/png' });
+        
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+        const uploadResponse = await fetch(`${backendUrl}/api/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          content = uploadData.url;
+        }
+      } catch (err) {
+        console.error('Failed to capture gift drawing:', err);
+      }
+    }
+
+    const fullGiftData = {
+      ...giftData,
+      content,
+      roomId,
+      senderId: socket.id,
+      senderName: userName,
+      position: { 
+        x: Math.random() * (window.innerWidth - 300) + 150, 
+        y: Math.random() * (window.innerHeight - 300) + 150 
+      }
+    };
+
+    socket.emit('send-gift', fullGiftData);
+    setNotification('Love Box sealed and sent to the future! 🎁✨');
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleOpenGift = (giftId) => {
+    if (!socket) return;
+    socket.emit('open-gift', { giftId, roomId });
+  };
+
+  const handleDeleteGift = (giftId) => {
+    if (!socket) return;
+    if (window.confirm('Delete this Time Capsule?')) {
+      socket.emit('delete-gift', { giftId, roomId });
+    }
   };
 
   const handleSaveDrawing = () => {
@@ -674,6 +770,8 @@ const CanvasRoom = () => {
         setIsHandInHand={setIsHandInHand}
         isVibeOpen={isVibeOpen}
         onToggleVibe={() => setIsVibeOpen(!isVibeOpen)}
+        onOpenGiftPopup={() => setIsGiftPopupOpen(true)}
+        hasGifts={hasGifts}
         remoteCursors={remoteCursors}
       />
       
@@ -868,6 +966,25 @@ const CanvasRoom = () => {
         isOpen={isVaultOpen}
         onClose={() => setIsVaultOpen(false)}
         roomId={roomId}
+      />
+
+      {/* Gift Boxes on Canvas */}
+      {gifts.map(gift => (
+        <GiftBox 
+          key={gift._id} 
+          gift={gift} 
+          onOpen={handleOpenGift} 
+          onDelete={handleDeleteGift}
+          isSender={gift.senderId === socket?.id}
+        />
+      ))}
+
+      {/* Gift Popup */}
+      <GiftPopup 
+        isOpen={isGiftPopupOpen} 
+        onClose={() => setIsGiftPopupOpen(false)} 
+        onSend={handleSendGift}
+        userName={userName}
       />
 
       <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto">

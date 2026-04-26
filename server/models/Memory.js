@@ -18,6 +18,16 @@ const MemorySchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  type: {
+    type: String,
+    enum: ['capture', 'gift'],
+    default: 'capture'
+  },
+  contentType: {
+    type: String,
+    enum: ['image', 'message'],
+    default: 'image'
+  },
   createdAt: {
     type: Date,
     default: Date.now
