@@ -70,10 +70,42 @@ app.get('/api/music/search', async (req, res) => {
 
 app.post('/api/music/upload', upload.single('audio'), async (req, res) => {
   try {
-    const { title, artist, uploadedBy } = req.body;
+    const { uploadedBy } = req.body;
+    let { title, artist } = req.body;
+    
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    // Upload to ImageKit
+    // 1. If title/artist missing, use Gemini to guess from filename
+    if (!title || title === 'undefined' || !artist || artist === 'undefined') {
+      try {
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const prompt = `Extract the song title and artist name from this filename: "${req.file.originalname}". 
+        Return ONLY a JSON object like this: {"title": "Song Name", "artist": "Artist Name"}. 
+        If you can't be sure, guess the most likely names. Remove extensions like .mp3.`;
+        
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text().replace(/```json|```/g, '').trim();
+        const metadata = JSON.parse(text);
+        title = title || metadata.title;
+        artist = artist || metadata.artist;
+      } catch (e) {
+        console.warn('Gemini metadata extraction failed:', e);
+        title = title || req.file.originalname.split('.')[0];
+        artist = artist || 'Unknown Artist';
+      }
+    }
+
+    // 2. Fetch Thumbnail automatically from iTunes
+    let thumbnail = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400';
+    try {
+      const itunesRes = await axios.get(`https://itunes.apple.com/search?term=${encodeURIComponent(title + ' ' + artist)}&media=music&limit=1`);
+      if (itunesRes.data.results && itunesRes.data.results.length > 0) {
+        thumbnail = itunesRes.data.results[0].artworkUrl100.replace('100x100', '600x600');
+      }
+    } catch (e) { console.warn('Thumbnail fetch failed'); }
+
+    // 3. Upload to ImageKit
     const uploadResponse = await imagekit.upload({
       file: req.file.buffer,
       fileName: `music_${Date.now()}_${req.file.originalname}`,
@@ -84,7 +116,7 @@ app.post('/api/music/upload', upload.single('audio'), async (req, res) => {
       title,
       artist,
       url: uploadResponse.url,
-      thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop', // Default thumbnail
+      thumbnail,
       uploadedBy
     });
 

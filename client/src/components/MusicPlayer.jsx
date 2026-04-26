@@ -204,16 +204,51 @@ const MusicPlayer = ({ isOpen, onClose, roomId, socket, musicData, setMusicData,
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
             {showUpload ? (
-              <motion.form initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onSubmit={handleFileUpload} className="space-y-3 p-2 text-center">
-                <Music className="size-8 text-rose-100 mx-auto mb-2" />
-                <h4 className="text-[11px] font-black uppercase text-rose-600">Upload to Library</h4>
-                <input type="text" placeholder="Title" required value={uploadMeta.title} onChange={e => setUploadMeta(m => ({ ...m, title: e.target.value }))} className="w-full bg-gray-50 border-none rounded-xl px-4 py-2 text-[10px] font-bold focus:ring-2 focus:ring-rose-100 outline-none" />
-                <input type="text" placeholder="Artist" required value={uploadMeta.artist} onChange={e => setUploadMeta(m => ({ ...m, artist: e.target.value }))} className="w-full bg-gray-50 border-none rounded-xl px-4 py-2 text-[10px] font-bold focus:ring-2 focus:ring-rose-100 outline-none" />
-                <input type="file" accept="audio/*" onChange={e => setUploadFile(e.target.files[0])} className="w-full text-[9px] font-black text-rose-300 uppercase file:bg-rose-50 file:border-none file:px-3 file:py-1 file:rounded-lg file:text-rose-500 file:mr-3 cursor-pointer" />
-                <button disabled={isUploading} className="w-full bg-rose-500 text-white text-[10px] font-black py-3 rounded-xl shadow-lg shadow-rose-100 disabled:opacity-50">
-                  {isUploading ? <Loader2 className="size-4 animate-spin mx-auto" /> : 'UPLOAD SONG'}
-                </button>
-              </motion.form>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 p-4 text-center">
+                <div className="space-y-1 mb-4">
+                  <h4 className="text-[11px] font-black uppercase text-rose-600">Smart AI Upload</h4>
+                  <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">We'll detect metadata & art automatically</p>
+                </div>
+
+                <form onSubmit={handleFileUpload} className="space-y-4">
+                  <label className="block w-full cursor-pointer group">
+                    <div className={`w-full bg-gray-50 border-2 border-dashed rounded-2xl p-6 transition-all ${uploadFile ? 'border-rose-400 bg-rose-50/50' : 'border-gray-100 group-hover:border-rose-200 group-hover:bg-gray-50'}`}>
+                      <div className="flex flex-col items-center gap-2">
+                         <Upload className={`size-6 ${uploadFile ? 'text-rose-500 animate-bounce' : 'text-rose-200'}`} />
+                         <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest truncate max-w-[200px] block">
+                           {uploadFile ? uploadFile.name : 'Select Audio File'}
+                         </span>
+                      </div>
+                      <input 
+                        type="file" 
+                        accept="audio/*" 
+                        className="hidden"
+                        onChange={(e) => setUploadFile(e.target.files[0])}
+                      />
+                    </div>
+                  </label>
+
+                  <div className="space-y-2 text-left opacity-40 hover:opacity-100 transition-opacity">
+                    <p className="text-[7px] font-black text-gray-400 uppercase ml-1">Optional Overrides</p>
+                    <input type="text" placeholder="Title (AI will guess if empty)" value={uploadMeta.title} onChange={e => setUploadMeta(m => ({ ...m, title: e.target.value }))} className="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-[10px] font-bold focus:ring-2 focus:ring-rose-100 outline-none" />
+                    <input type="text" placeholder="Artist (AI will guess if empty)" value={uploadMeta.artist} onChange={e => setUploadMeta(m => ({ ...m, artist: e.target.value }))} className="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-[10px] font-bold focus:ring-2 focus:ring-rose-100 outline-none" />
+                  </div>
+
+                  <button 
+                    disabled={isUploading || !uploadFile} 
+                    className="w-full bg-rose-500 text-white text-[10px] font-black py-4 rounded-2xl shadow-lg shadow-rose-100 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        <span className="uppercase tracking-widest">AI is Processing...</span>
+                      </>
+                    ) : (
+                      <span className="uppercase tracking-widest">Upload & Sync</span>
+                    )}
+                  </button>
+                </form>
+              </motion.div>
             ) : isSearching ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
                 <Loader2 className="size-6 text-rose-200 animate-spin" />
