@@ -132,11 +132,20 @@ const CanvasRoom = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    if (!socket) return;
+  // Track joining to prevent duplicate emissions
+  const hasJoinedRef = useRef(false);
 
-    // Join room
-    socket.emit('join-room', { roomId, userName });
+  useEffect(() => {
+    if (!socket || !isConnected) {
+      hasJoinedRef.current = false;
+      return;
+    }
+
+    if (!hasJoinedRef.current) {
+      // Join room
+      socket.emit('join-room', { roomId, userName, vibe: currentVibe });
+      hasJoinedRef.current = true;
+    }
 
     // Listeners
     socket.on('user-list-update', (userList) => {
@@ -194,17 +203,6 @@ const CanvasRoom = () => {
       setUserHistory(history);
     });
 
-    socket.on('webrtc-signal', (data) => {
-      const { from, signal } = data;
-      if (peersRef.current[from]) {
-        peersRef.current[from].signal(signal);
-      } else if (localStream && inCall) {
-        // Someone is calling us
-        const peer = createPeer(from, socket.id, localStream, false);
-        peersRef.current[from] = peer;
-        peer.signal(signal);
-      }
-    });
     socket.on('movie-update-remote', (data) => {
       if (data.action === 'url' || data.url) {
         setMovieUrl(data.url);
@@ -320,7 +318,6 @@ const CanvasRoom = () => {
       socket.off('background-changed');
       socket.off('notification');
       socket.off('user-history-update');
-      socket.off('webrtc-signal');
       socket.off('movie-update-remote');
       socket.off('sync-to-master');
       socket.off('canvas-list-update');
@@ -331,7 +328,28 @@ const CanvasRoom = () => {
       socket.off('memories-update');
       socket.off('music-update-remote');
     };
-  }, [socket, roomId, userName, localStream, inCall]);
+  }, [socket, isConnected, roomId, userName]);
+
+  // Separate effect for Video Call/WebRTC which depends on streams
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('webrtc-signal', (data) => {
+      const { from, signal } = data;
+      if (peersRef.current[from]) {
+        peersRef.current[from].signal(signal);
+      } else if (localStream && inCall) {
+        // Someone is calling us
+        const peer = createPeer(from, socket.id, localStream, false);
+        peersRef.current[from] = peer;
+        peer.signal(signal);
+      }
+    });
+
+    return () => {
+      socket.off('webrtc-signal');
+    };
+  }, [socket, localStream, inCall]);
 
   const triggerReaction = (emoji) => {
     if (!socket) return;

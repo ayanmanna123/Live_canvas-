@@ -21,6 +21,10 @@ const userHistorySchema = new mongoose.Schema({
   leftAt: {
     type: Date,
     default: null
+  },
+  vibe: {
+    type: String,
+    default: 'happy'
   }
 });
 

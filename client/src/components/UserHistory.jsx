@@ -28,6 +28,15 @@ const UserHistoryPanel = ({ history, isOpen, onClose }) => {
     return `${hours}h ${mins % 60}m`;
   };
 
+  const VIBE_EMOJIS = {
+    happy: '😊',
+    sad: '😢',
+    love: '❤️',
+    cool: '😎',
+    angry: '😠',
+    thinking: '🤔'
+  };
+
   return (
     <div className="fixed inset-0 sm:inset-auto sm:top-24 sm:right-6 z-[60] sm:z-50 w-full sm:w-80 h-full sm:h-[calc(100vh-200px)] flex flex-col rounded-none sm:rounded-[2.5rem] glass shadow-2xl border-white/50 overflow-hidden animate-in slide-in-from-bottom sm:slide-in-from-right-5 duration-700">
       {/* Header */}
@@ -66,6 +75,11 @@ const UserHistoryPanel = ({ history, isOpen, onClose }) => {
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ color: uColor, backgroundColor: uColor }} />
                   <span className="text-xs font-black text-rose-900 uppercase tracking-tight">{log.userName}</span>
+                  {log.vibe && (
+                    <span className="text-[10px]" title={`Joined while feeling ${log.vibe}`}>
+                      {VIBE_EMOJIS[log.vibe] || '✨'}
+                    </span>
+                  )}
                 </div>
                 {isActive ? (
                   <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-tighter">

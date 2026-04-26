@@ -409,52 +409,61 @@ const rooms = new Map();
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  socket.on('join-room', async ({ roomId, userName }) => {
-    if (!roomId || !userName) return;
+    socket.on('join-room', async ({ roomId, userName, vibe }) => {
+      if (!roomId || !userName) return;
 
-    socket.join(roomId);
-    console.log(`${userName} (${socket.id}) joined room: ${roomId}`);
+      socket.join(roomId);
+      console.log(`${userName} (${socket.id}) joined room: ${roomId}`);
 
-    // Track user in room
-    if (!rooms.has(roomId)) {
-      rooms.set(roomId, {
-        users: new Map(),
-        movie: { url: '', playing: false, currentTime: 0, masterId: null },
-        music: { url: '', playing: false, currentTime: 0, masterId: null, title: '', artist: '', thumbnail: '' }
-      });
-    }
-    rooms.get(roomId).users.set(socket.id, userName);
-
-    // Send existing strokes, chat history, and user history to the new user (only if DB is connected)
-    if (mongoose.connection.readyState === 1) {
-      try {
-        // Find or create default canvas for this room
-        let activeCanvas = await Canvas.findOne({ roomId }).sort({ createdAt: 1 });
-        if (!activeCanvas) {
-          activeCanvas = new Canvas({
-            name: 'Default Canvas',
-            roomId,
-            createdBy: 'System'
-          });
-          await activeCanvas.save();
-        }
-
-        const [strokes, messages, history, allCanvases, gifts] = await Promise.all([
-          Stroke.find({ roomId, canvasId: activeCanvas._id }).sort({ createdAt: 1 }),
-          Message.find({ roomId }).sort({ createdAt: 1 }).limit(100),
-          UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50),
-          Canvas.find({ roomId }).sort({ createdAt: -1 }),
-          Gift.find({ roomId })
-        ]);
-
-        // Record this join event
-        const newHistoryEntry = new UserHistory({
-          roomId,
-          userId: socket.id,
-          userName,
-          joinedAt: new Date()
+      // Track user in room
+      if (!rooms.has(roomId)) {
+        rooms.set(roomId, {
+          users: new Map(),
+          movie: { url: '', playing: false, currentTime: 0, masterId: null },
+          music: { url: '', playing: false, currentTime: 0, masterId: null, title: '', artist: '', thumbnail: '' }
         });
-        await newHistoryEntry.save();
+      }
+      rooms.get(roomId).users.set(socket.id, userName);
+
+      // Send existing strokes, chat history, and user history to the new user (only if DB is connected)
+      if (mongoose.connection.readyState === 1) {
+        try {
+          // Find or create default canvas for this room
+          let activeCanvas = await Canvas.findOne({ roomId }).sort({ createdAt: 1 });
+          if (!activeCanvas) {
+            activeCanvas = new Canvas({
+              name: 'Default Canvas',
+              roomId,
+              createdBy: 'System'
+            });
+            await activeCanvas.save();
+          }
+
+          const [strokes, messages, history, allCanvases, gifts] = await Promise.all([
+            Stroke.find({ roomId, canvasId: activeCanvas._id }).sort({ createdAt: 1 }),
+            Message.find({ roomId }).sort({ createdAt: 1 }).limit(100),
+            UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50),
+            Canvas.find({ roomId }).sort({ createdAt: -1 }),
+            Gift.find({ roomId })
+          ]);
+
+          // Record this join event only if not already recorded for this socket session
+          const existingHistory = await UserHistory.findOne({
+            roomId,
+            userId: socket.id,
+            leftAt: null
+          });
+
+          if (!existingHistory) {
+            const newHistoryEntry = new UserHistory({
+              roomId,
+              userId: socket.id,
+              userName,
+              joinedAt: new Date(),
+              vibe: vibe || 'happy'
+            });
+            await newHistoryEntry.save();
+          }
 
         socket.emit('active-canvas-update', activeCanvas);
         socket.emit('canvas-list-update', allCanvases);
