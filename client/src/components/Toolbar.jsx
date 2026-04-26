@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, Gift } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, Gift, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({
@@ -37,7 +37,9 @@ const Toolbar = ({
   isVibeOpen,
   onToggleVibe,
   onOpenGiftPopup,
-  hasGifts
+  hasGifts,
+  onToggleMusic,
+  isMusicOpen
 }) => {
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 640);
   const [isReactionWheelOpen, setIsReactionWheelOpen] = useState(false);
@@ -290,6 +292,9 @@ const Toolbar = ({
         <div className="flex items-center gap-1 px-1 border-r border-white/5">
           <button onClick={onToggleWatchParty} className={`size-9 flex items-center justify-center rounded-full transition-all ${isWatchPartyOpen ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Watch Party">
             <Film className="size-4" />
+          </button>
+          <button onClick={onToggleMusic} className={`size-9 flex items-center justify-center rounded-full transition-all ${isMusicOpen ? "text-rose-500 bg-rose-50" : "text-rose-300 hover:text-rose-500"}`} title="Romantic Radio">
+            <Music className={`size-4 ${isMusicOpen ? 'animate-bounce' : ''}`} />
           </button>
           <button onClick={onOpenGames} className="size-9 flex items-center justify-center rounded-full text-rose-300 hover:text-rose-500 transition-all" title="Games">
             <Gamepad2 className="size-4" />

@@ -21,6 +21,7 @@ import FloatingHearts from '../components/FloatingHearts';
 import GiftPopup from '../components/GiftPopup';
 import GiftBox from '../components/GiftBox';
 import GiftRevealModal from '../components/GiftRevealModal';
+import MusicPlayer from '../components/MusicPlayer';
 
 const CanvasRoom = () => {
   const { roomId } = useParams();
@@ -58,6 +59,11 @@ const CanvasRoom = () => {
   const [showGrid, setShowGrid] = useState(false);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [reactions, setReactions] = useState([]); // { id, emoji, position, userId }
+  const [isMusicPlayerOpen, setIsMusicPlayerOpen] = useState(false);
+  const [musicData, setMusicData] = useState({ url: '', title: '', artist: '', thumbnail: '' });
+  const [musicPlaying, setMusicPlaying] = useState(false);
+  const [musicTime, setMusicTime] = useState(0);
+  const [musicMasterId, setMusicMasterId] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
   // Canvas Management State
@@ -221,6 +227,33 @@ const CanvasRoom = () => {
       setMovieTime(currentTime);
     });
 
+    socket.on('music-update-remote', (data) => {
+      if (data.action === 'url' || data.url) {
+        setMusicData({
+          url: data.url,
+          title: data.title,
+          artist: data.artist,
+          thumbnail: data.thumbnail
+        });
+      }
+      if (data.action === 'play') setMusicPlaying(true);
+      if (data.action === 'pause') setMusicPlaying(false);
+      if (data.action === 'seek') setMusicTime(data.currentTime);
+      if (data.masterId) setMusicMasterId(data.masterId);
+      
+      if (!data.action && data.url !== undefined) {
+        setMusicData({
+          url: data.url,
+          title: data.title,
+          artist: data.artist,
+          thumbnail: data.thumbnail
+        });
+        setMusicPlaying(data.playing);
+        setMusicTime(data.currentTime);
+        setMusicMasterId(data.masterId);
+      }
+    });
+
     socket.on('active-canvas-update', (canvas) => {
       setActiveCanvas(canvas);
       if (canvas.bgColor) {
@@ -296,6 +329,7 @@ const CanvasRoom = () => {
       socket.off('receive-gift');
       socket.off('gift-opened');
       socket.off('memories-update');
+      socket.off('music-update-remote');
     };
   }, [socket, roomId, userName, localStream, inCall]);
 
@@ -779,6 +813,8 @@ const CanvasRoom = () => {
         onOpenGiftPopup={() => setIsGiftPopupOpen(true)}
         hasGifts={hasGifts}
         remoteCursors={remoteCursors}
+        onToggleMusic={() => setIsMusicPlayerOpen(!isMusicPlayerOpen)}
+        isMusicOpen={isMusicPlayerOpen}
       />
       
       {inCall && localStream && (
@@ -794,6 +830,20 @@ const CanvasRoom = () => {
           onToggleScreenShare={handleToggleScreenShare}
         />
       )}
+
+      <MusicPlayer 
+        isOpen={isMusicPlayerOpen}
+        onClose={() => setIsMusicPlayerOpen(false)}
+        roomId={roomId}
+        socket={socket}
+        musicData={musicData}
+        setMusicData={setMusicData}
+        playing={musicPlaying}
+        setPlaying={setMusicPlaying}
+        currentTime={musicTime}
+        setCurrentTime={setMusicTime}
+        masterId={musicMasterId}
+      />
 
       {/* Header Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 z-[60] flex items-center justify-between px-6 pointer-events-none">

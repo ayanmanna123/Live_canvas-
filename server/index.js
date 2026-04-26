@@ -311,7 +311,8 @@ io.on('connection', (socket) => {
     if (!rooms.has(roomId)) {
       rooms.set(roomId, {
         users: new Map(),
-        movie: { url: '', playing: false, currentTime: 0, masterId: null }
+        movie: { url: '', playing: false, currentTime: 0, masterId: null },
+        music: { url: '', playing: false, currentTime: 0, masterId: null, title: '', artist: '', thumbnail: '' }
       });
     }
     rooms.get(roomId).users.set(socket.id, userName);
@@ -352,6 +353,7 @@ io.on('connection', (socket) => {
         socket.emit('canvas-history', strokes);
         socket.emit('chat-history', messages);
         socket.emit('movie-update-remote', rooms.get(roomId).movie);
+        socket.emit('music-update-remote', rooms.get(roomId).music || {});
         socket.emit('gift-list-update', gifts);
         io.to(roomId).emit('user-history-update', await UserHistory.find({ roomId }).sort({ joinedAt: -1 }).limit(50));
       } catch (error) {
@@ -630,6 +632,47 @@ io.on('connection', (socket) => {
 
     if (requesterId) {
       io.to(requesterId).emit('sync-to-master', { currentTime });
+    }
+  });
+
+  socket.on('music-update', (data) => {
+    // data: { roomId, url, playing, currentTime, title, artist, thumbnail, action: 'play'|'pause'|'seek'|'url' }
+    const { roomId } = data;
+    if (!roomId || !rooms.has(roomId)) return;
+
+    // Update server-side state
+    const room = rooms.get(roomId);
+    if (!room.music) {
+      room.music = { url: '', playing: false, currentTime: 0, masterId: null, title: '', artist: '', thumbnail: '' };
+    }
+
+    if (data.action === 'url') {
+      room.music.url = data.url;
+      room.music.title = data.title;
+      room.music.artist = data.artist;
+      room.music.thumbnail = data.thumbnail;
+      room.music.masterId = socket.id;
+    }
+    if (data.action === 'play') room.music.playing = true;
+    if (data.action === 'pause') room.music.playing = false;
+    if (data.action === 'seek') room.music.currentTime = data.currentTime;
+
+    // Broadcast update
+    io.to(roomId).emit('music-update-remote', { ...data, masterId: room.music.masterId });
+  });
+
+  socket.on('music-time-report', (data) => {
+    const { roomId, currentTime } = data;
+    if (roomId && rooms.has(roomId)) {
+      const room = rooms.get(roomId);
+      if (room.music) {
+        room.music.currentTime = currentTime;
+        socket.to(roomId).emit('music-update-remote', {
+          roomId,
+          currentTime,
+          masterId: room.music.masterId
+        });
+      }
     }
   });
 
