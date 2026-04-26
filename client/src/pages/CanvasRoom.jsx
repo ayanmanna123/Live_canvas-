@@ -8,7 +8,7 @@ import Chat from '../components/Chat';
 import UserHistoryPanel from '../components/UserHistory';
 import CanvasListPanel from '../components/CanvasListPanel';
 import NewCanvasModal from '../components/NewCanvasModal';
-import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video, Plus, Layout, History, Sparkles, Camera, Paintbrush } from 'lucide-react';
+import { Share2, Users as UsersIcon, LogOut, Bell, BellOff, Video, Plus, Layout, History, Sparkles, Camera, Paintbrush, Code2 } from 'lucide-react';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Peer from 'simple-peer';
 import VideoCall from '../components/VideoCall';
@@ -878,11 +878,11 @@ const CanvasRoom = () => {
           </button>
           
           <button 
-            onClick={handleCapture}
+            onClick={() => navigate('/developers')}
             className="flex items-center gap-2 px-4 py-2 rounded-2xl hover:bg-rose-50 text-rose-400 hover:text-rose-600 transition-all font-bold"
           >
-            <Camera className="size-4" />
-            <span className="text-[11px] uppercase tracking-widest">Preserve Frame</span>
+            <Code2 className="size-4" />
+            <span className="text-[11px] uppercase tracking-widest">Developers</span>
           </button>
 
           <button 

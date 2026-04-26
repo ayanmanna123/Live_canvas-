@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
-import { Paintbrush, ArrowRight, Plus, Sparkles, Heart } from 'lucide-react';
+import { Paintbrush, ArrowRight, Plus, Sparkles, Heart, Code2 } from 'lucide-react';
 import FloatingHearts from '../components/FloatingHearts';
 
 const Home = () => {
@@ -117,10 +117,19 @@ const Home = () => {
         </div>
 
         {/* Footer info */}
-        <div className="space-y-2 opacity-60">
+        <div className="space-y-4 opacity-60">
           <p className="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em]">
             No login required • Fully encrypted • Forever yours
           </p>
+          
+          <button 
+            onClick={() => navigate('/developers')}
+            className="group inline-flex items-center gap-2 rounded-full bg-white/40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-all border border-transparent hover:border-rose-100"
+          >
+            <Code2 className="size-3" />
+            Meet the Developers
+          </button>
+
           <div className="flex justify-center gap-4 text-rose-300">
              <Heart className="size-4 fill-current" />
              <Sparkles className="size-4" />
