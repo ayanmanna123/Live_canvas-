@@ -59,6 +59,7 @@ const Toolbar = ({
       if (!response.ok) throw new Error('AI generation failed');
       const data = await response.json();
       
+      
       // Use the same image placement logic as manual upload
       // Create a dummy file object or just pass the URL if we modify handleImageUpload
       // Actually, it's easier to just pass the URL back to CanvasRoom
