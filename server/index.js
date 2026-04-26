@@ -12,6 +12,7 @@ import GameScore from './models/GameScore.js';
 import Canvas from './models/Canvas.js';
 import Memory from './models/Memory.js';
 import Gift from './models/Gift.js';
+import MusicTrack from './models/MusicTrack.js';
 import { sendPushNotification } from './utils/pushNotification.js';
 import ImageKit from 'imagekit';
 import multer from 'multer';
@@ -49,7 +50,49 @@ const imagekit = new ImageKit({
 // Multer Setup
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 15 * 1024 * 1024 } // 15MB limit for music
+});
+
+// Music Library Routes
+app.get('/api/music/search', async (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.json([]);
+  try {
+    const tracks = await MusicTrack.find(
+      { $text: { $search: q } },
+      { score: { $meta: "textScore" } }
+    ).sort({ score: { $meta: "textScore" } });
+    res.json(tracks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/music/upload', upload.single('audio'), async (req, res) => {
+  try {
+    const { title, artist, uploadedBy } = req.body;
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    // Upload to ImageKit
+    const uploadResponse = await imagekit.upload({
+      file: req.file.buffer,
+      fileName: `music_${Date.now()}_${req.file.originalname}`,
+      folder: '/music-library'
+    });
+
+    const newTrack = new MusicTrack({
+      title,
+      artist,
+      url: uploadResponse.url,
+      thumbnail: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop', // Default thumbnail
+      uploadedBy
+    });
+
+    await newTrack.save();
+    res.json(newTrack);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Gemini AI Setup
