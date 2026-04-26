@@ -388,6 +388,30 @@ app.delete('/api/memories/:id', async (req, res) => {
   }
 });
 
+// Admin Monitoring Routes
+app.get('/api/admin/active-rooms', (req, res) => {
+  const activeRooms = [];
+  rooms.forEach((data, roomId) => {
+    activeRooms.push({
+      roomId,
+      userCount: data.users.size,
+      users: Array.from(data.users.values()),
+      movie: data.movie,
+      music: data.music
+    });
+  });
+  res.json(activeRooms);
+});
+
+app.get('/api/admin/room-history', async (req, res) => {
+  try {
+    const history = await UserHistory.find().sort({ joinedAt: -1 }).limit(200);
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/live-canvas';
 
@@ -409,7 +433,28 @@ const rooms = new Map();
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-    socket.on('join-room', async ({ roomId, userName, vibe }) => {
+  socket.on('admin-watch-room', async ({ roomId }) => {
+    if (!roomId) return;
+    
+    // Join room silently (don't add to rooms map)
+    socket.join(roomId);
+    console.log(`Admin (${socket.id}) watching room: ${roomId}`);
+
+    if (mongoose.connection.readyState === 1) {
+      try {
+        let activeCanvas = await Canvas.findOne({ roomId }).sort({ createdAt: 1 });
+        if (activeCanvas) {
+          const strokes = await Stroke.find({ roomId, canvasId: activeCanvas._id }).sort({ createdAt: 1 });
+          socket.emit('active-canvas-update', activeCanvas);
+          socket.emit('canvas-history', strokes);
+        }
+      } catch (error) {
+        console.error('Admin watch error:', error);
+      }
+    }
+  });
+
+  socket.on('join-room', async ({ roomId, userName, vibe }) => {
       if (!roomId || !userName) return;
 
       socket.join(roomId);

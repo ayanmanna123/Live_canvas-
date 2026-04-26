@@ -10,6 +10,7 @@ import SnakeAndLadderPage from './pages/SnakeAndLadderPage';
 import ChessPage from './pages/ChessPage';
 import LudoPage from './pages/LudoPage';
 import Developers from './pages/Developers';
+import AdminDashboard from './pages/AdminDashboard';
 import GameInviteModal from './components/games/GameInviteModal';
 import './App.css';
 
@@ -24,6 +25,7 @@ function App() {
             <Route path="/room/:roomId" element={<CanvasRoom />} />
             <Route path="/games" element={<Games />} />
             <Route path="/developers" element={<Developers />} />
+            <Route path="/master-admin-canvas-dashboard" element={<AdminDashboard />} />
             <Route path="/games/tictactoe" element={<TicTacToePage />} />
             <Route path="/games/rockpaperscissors" element={<RockPaperScissorsPage />} />
             <Route path="/games/snakeandladder" element={<SnakeAndLadderPage />} />

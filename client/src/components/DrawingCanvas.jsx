@@ -104,7 +104,7 @@ const canvasReducer = (state, action) => {
   }
 };
 
-const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, size, tool, onPan, showRopes, autoMode, showGrid, snapToGrid, isHandInHand, remoteCursors }, ref) => {
+const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, size, tool, onPan, showRopes, autoMode, showGrid, snapToGrid, isHandInHand, remoteCursors, readOnly = false }, ref) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -1210,17 +1210,18 @@ const DrawingCanvas = forwardRef(({ roomId, canvasId, userName, color, bgColor, 
     <div ref={containerRef} className="relative w-full h-full overflow-hidden">
       <canvas
         ref={canvasRef}
-        onPointerDown={startInteraction}
-        onPointerMove={performInteraction}
-        onPointerUp={stopInteraction}
-        onPointerLeave={stopInteraction}
+        onPointerDown={(e) => !readOnly && startInteraction(e)}
+        onPointerMove={(e) => !readOnly && performInteraction(e)}
+        onPointerUp={(e) => !readOnly && stopInteraction(e)}
+        onPointerLeave={(e) => !readOnly && stopInteraction(e)}
         onClick={(e) => {
+          if (readOnly) return;
           handleCanvasClick(e);
           setEditMenu(null); // Close menu on click elsewhere
         }}
-        onDoubleClick={handleDoubleClick}
+        onDoubleClick={(e) => !readOnly && handleDoubleClick(e)}
         onContextMenu={(e) => e.preventDefault()}
-        className={`block touch-none ${isPanning ? 'cursor-grabbing' : tool === 'pan' ? 'cursor-grab' : tool === 'text' ? 'cursor-text' : tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
+        className={`block touch-none ${readOnly ? 'cursor-default' : isPanning ? 'cursor-grabbing' : tool === 'pan' ? 'cursor-grab' : tool === 'text' ? 'cursor-text' : tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
       />
 
       {/* Selection Box Overlay */}
