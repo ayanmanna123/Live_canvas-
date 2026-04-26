@@ -249,6 +249,9 @@ const CanvasRoom = () => {
         setHasGifts(true);
         // Play sound
         notificationAudio.current.play().catch(e => console.log('Audio play failed:', e));
+        
+        // Clear notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
       }
     });
 
@@ -968,8 +971,8 @@ const CanvasRoom = () => {
         roomId={roomId}
       />
 
-      {/* Gift Boxes on Canvas */}
-      {gifts.map(gift => (
+      {/* Gift Boxes on Canvas (Only Unopened) */}
+      {gifts.filter(g => !g.isOpened).map(gift => (
         <GiftBox 
           key={gift._id} 
           gift={gift} 
@@ -979,12 +982,16 @@ const CanvasRoom = () => {
         />
       ))}
 
-      {/* Gift Popup */}
+      {/* Gift Popup / History */}
       <GiftPopup 
         isOpen={isGiftPopupOpen} 
         onClose={() => setIsGiftPopupOpen(false)} 
         onSend={handleSendGift}
         userName={userName}
+        gifts={gifts}
+        onOpenGift={handleOpenGift}
+        onDeleteGift={handleDeleteGift}
+        socketId={socket?.id}
       />
 
       <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto">

@@ -7,9 +7,22 @@ const GiftBox = ({ gift, onOpen, onDelete, isSender }) => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
+  const [isVisible, setIsVisible] = useState(false);
+
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = new Date(gift.unlockDate) - new Date();
+      const now = new Date();
+      const unlockTime = new Date(gift.unlockDate);
+      const difference = unlockTime - now;
+
+      // Visibility logic: Show if already opened, or if we are within 1 minute of unlocking
+      const oneMinuteInMs = 60 * 1000;
+      if (gift.isOpened || difference <= oneMinuteInMs) {
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
+
       if (difference <= 0) {
         setIsUnlocked(true);
         setTimeLeft(null);
@@ -37,6 +50,8 @@ const GiftBox = ({ gift, onOpen, onDelete, isSender }) => {
       setShowPreview(true);
     }
   };
+
+  if (!isVisible && !gift.isOpened) return null;
 
   return (
     <>
@@ -76,8 +91,9 @@ const GiftBox = ({ gift, onOpen, onDelete, isSender }) => {
                 <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Unlocking</span>
                 <div className="flex gap-1 text-[10px] font-bold text-rose-500">
                   {timeLeft.days > 0 && <span>{timeLeft.days}d</span>}
-                  <span>{timeLeft.hours}h</span>
+                  {timeLeft.hours > 0 && <span>{timeLeft.hours}h</span>}
                   <span>{timeLeft.minutes}m</span>
+                  <span>{timeLeft.seconds}s</span>
                 </div>
               </div>
             )}
