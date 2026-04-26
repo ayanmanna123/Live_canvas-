@@ -155,7 +155,7 @@ const CanvasRoom = () => {
         if (Notification.permission === 'granted') {
           new Notification('New Message', {
             body: `${msg.userName}: ${msg.text}`,
-            icon: '/favicon.svg',
+            icon: '/logo.svg',
             tag: 'chat-notification',
             renotify: true
           });
@@ -849,8 +849,8 @@ const CanvasRoom = () => {
       <div className="fixed top-0 left-0 right-0 h-16 z-[60] flex items-center justify-between px-6 pointer-events-none">
         {/* Top Left: Logo & Room Info */}
         <div className="flex items-center gap-4 pointer-events-auto glass-light rounded-3xl p-2 pr-6 animate-in slide-in-from-top-10 duration-700 shadow-lg border-white/40">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-lg shadow-rose-200/50 heart-pulse">
-            <Paintbrush className="size-6 text-white" />
+          <div className="h-12 w-12 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-rose-200/50 heart-pulse overflow-hidden p-2">
+            <img src="/logo.svg" alt="Logo" className="size-full object-contain" />
           </div>
           <div>
             <h1 className="text-lg font-black text-rose-600 leading-tight tracking-tight font-serif italic">

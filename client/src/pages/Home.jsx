@@ -38,8 +38,8 @@ const Home = () => {
       <div className="z-10 w-full max-w-md space-y-10 text-center">
         {/* Header */}
         <div className="space-y-4 animate-in fade-in slide-in-from-top-10 duration-1000">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-gradient-to-br from-rose-400 to-pink-500 shadow-xl shadow-rose-200/50 heart-pulse">
-            <Paintbrush className="h-10 w-10 text-white" />
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white shadow-xl shadow-rose-200/50 heart-pulse overflow-hidden p-3">
+            <img src="/logo.svg" alt="LoveCanvas Logo" className="h-full w-full object-contain" />
           </div>
           <div className="space-y-2">
             <h1 className="text-5xl font-black tracking-tighter text-rose-600 font-serif italic">
