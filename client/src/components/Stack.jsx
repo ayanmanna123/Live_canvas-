@@ -114,7 +114,10 @@ export default function Stack({
       onMouseEnter={() => pauseOnHover && setIsPaused(true)}
       onMouseLeave={() => pauseOnHover && setIsPaused(false)}>
       {stack.map((card, index) => {
-        const randomRotate = randomRotation ? (Math.sin(index) * 10) : 0; // Deterministic random-ish rotation
+        const isTop = index === stack.length - 1;
+        const offset = stack.length - index - 1;
+        const rotateZ = isTop ? 0 : offset * 4 + (randomRotation ? (Math.sin(index) * 4) : 0);
+        
         return (
           <CardRotate
             key={card.id}
@@ -122,12 +125,15 @@ export default function Stack({
             sensitivity={sensitivity}
             disableDrag={shouldDisableDrag}>
             <motion.div
-              className="rounded-2xl overflow-hidden w-full h-full bg-white shadow-lg"
+              className="rounded-2xl overflow-hidden w-full h-full bg-white shadow-xl border border-rose-100"
               onClick={() => shouldEnableClick && sendToBack(card.id)}
               animate={{
-                rotateZ: (stack.length - index - 1) * 4 + randomRotate,
-                scale: 1 + index * 0.06 - stack.length * 0.06,
-                transformOrigin: '90% 90%'
+                rotateZ,
+                scale: isTop ? 1 : 1 - offset * 0.05,
+                x: isTop ? 0 : offset * 12,
+                y: isTop ? 0 : offset * -6,
+                zIndex: index,
+                transformOrigin: 'center'
               }}
               initial={false}
               transition={{
