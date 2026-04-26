@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Gift, Calendar, Heart, X, Send, MessageSquare, Image as ImageIcon, Upload, CheckCircle2, History, Lock, Eye, Trash2, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import GiftRevealModal from './GiftRevealModal';
 
 const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
@@ -12,7 +13,19 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [viewingGift, setViewingGift] = useState(null);
+  const [openingGiftId, setOpeningGiftId] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Auto-view gift when it transitions to opened state if we were the ones opening it
+  useEffect(() => {
+    if (openingGiftId) {
+      const openedGift = gifts.find(g => g._id === openingGiftId && g.isOpened);
+      if (openedGift) {
+        setViewingGift(openedGift);
+        setOpeningGiftId(null);
+      }
+    }
+  }, [gifts, openingGiftId]);
 
   if (!isOpen) return null;
 
@@ -234,13 +247,13 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
                     <p className="text-sm font-bold text-rose-900 uppercase tracking-widest">No capsules yet</p>
                   </div>
                 ) : (
-                  sortedGifts.map((gift) => {
+                  sortedGifts.map((gift, index) => {
                     const isUnlocked = new Date(gift.unlockDate) <= new Date();
                     const isOwnGift = gift.senderId === socketId;
 
                     return (
                       <motion.div
-                        key={gift._id}
+                        key={gift._id || `gift-${gift.createdAt}-${index}`}
                         layout
                         className={`p-5 rounded-3xl border-2 transition-all ${gift.isOpened ? 'bg-rose-50/30 border-rose-100' : 'bg-white border-rose-50 shadow-sm'}`}
                       >
@@ -262,7 +275,10 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
                           <div className="flex items-center gap-2">
                              {isUnlocked && !gift.isOpened && !isOwnGift && (
                                <button 
-                                 onClick={() => onOpenGift(gift._id)}
+                                 onClick={() => {
+                                   setOpeningGiftId(gift._id);
+                                   onOpenGift(gift._id);
+                                 }}
                                  className="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-600 transition-all"
                                >
                                  Open
@@ -304,72 +320,12 @@ const GiftPopup = ({ isOpen, onClose, onSend, userName, gifts = [], onOpenGift, 
         </motion.div>
       </div>
 
-      {/* Gift Detail View (Nested Modal) */}
-      <AnimatePresence>
-        {viewingGift && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-rose-950/60 backdrop-blur-md"
-              onClick={() => setViewingGift(null)}
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 50 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 50 }}
-              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-rose-100"
-            >
-              <div className="p-10 flex flex-col items-center text-center gap-8 max-h-[85vh] overflow-y-auto custom-scrollbar">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="size-16 rounded-3xl bg-rose-50 flex items-center justify-center text-rose-500">
-                    <Gift className="size-10" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-rose-900 uppercase tracking-tight">Opened Capsule</h2>
-                    <p className="text-xs font-bold text-rose-400 uppercase tracking-widest">A memory from {viewingGift.senderName}</p>
-                  </div>
-                </div>
-
-                <div className="w-full space-y-6">
-                  {(viewingGift.content.imageUrl || viewingGift.content.drawingUrl) && (
-                    <div className="relative group max-w-full">
-                       <img 
-                         src={viewingGift.content.imageUrl || viewingGift.content.drawingUrl} 
-                         alt="Memory" 
-                         className="max-h-[350px] w-auto mx-auto rounded-3xl shadow-xl border-8 border-rose-50"
-                       />
-                    </div>
-                  )}
-
-                  {viewingGift.content.message && (
-                    <div className="bg-gradient-to-br from-rose-50/50 to-pink-50/50 p-8 rounded-[2rem] border-2 border-rose-50 relative">
-                       <MessageSquare className="absolute -top-3 -left-3 size-10 text-rose-200/50 rotate-[-12deg]" />
-                       <p className="text-xl text-rose-800 font-serif leading-relaxed italic relative z-10">
-                         "{viewingGift.content.message}"
-                       </p>
-                    </div>
-                  )}
-                </div>
-                
-                <button
-                  onClick={() => setViewingGift(null)}
-                  className="w-full py-5 bg-gradient-to-r from-rose-500 to-pink-500 hover:brightness-110 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
-                >
-                  Close & Back to Capsules
-                </button>
-              </div>
-              <button 
-                onClick={() => setViewingGift(null)}
-                className="absolute top-6 right-6 size-10 bg-rose-50 rounded-full flex items-center justify-center text-rose-400 hover:bg-rose-100"
-              >
-                <X className="size-5" />
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <GiftRevealModal 
+        gift={viewingGift}
+        isOpen={!!viewingGift}
+        onClose={() => setViewingGift(null)}
+        userName={userName}
+      />
     </AnimatePresence>
   );
 };

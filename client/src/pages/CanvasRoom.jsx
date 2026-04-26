@@ -20,6 +20,7 @@ import VibeTracker, { VIBES } from '../components/VibeTracker';
 import FloatingHearts from '../components/FloatingHearts';
 import GiftPopup from '../components/GiftPopup';
 import GiftBox from '../components/GiftBox';
+import GiftRevealModal from '../components/GiftRevealModal';
 
 const CanvasRoom = () => {
   const { roomId } = useParams();
@@ -87,6 +88,7 @@ const CanvasRoom = () => {
   const [gifts, setGifts] = useState([]);
   const [isGiftPopupOpen, setIsGiftPopupOpen] = useState(false);
   const [hasGifts, setHasGifts] = useState(false);
+  const [revealGift, setRevealGift] = useState(null);
   
   const canvasRef = useRef(null);
   const notificationAudio = useRef(new Audio('/notification.mp3'));
@@ -257,6 +259,7 @@ const CanvasRoom = () => {
 
     socket.on('gift-opened', (openedGift) => {
       setGifts(prev => prev.map(g => g._id === openedGift._id ? openedGift : g));
+      setRevealGift(openedGift);
     });
 
     socket.on('memories-update', (updatedMemories) => {
@@ -972,9 +975,9 @@ const CanvasRoom = () => {
       />
 
       {/* Gift Boxes on Canvas (Only Unopened) */}
-      {gifts.filter(g => !g.isOpened).map(gift => (
+      {gifts.filter(g => !g.isOpened).map((gift, index) => (
         <GiftBox 
-          key={gift._id} 
+          key={gift._id || `canvas-gift-${index}`} 
           gift={gift} 
           onOpen={handleOpenGift} 
           onDelete={handleDeleteGift}
@@ -992,6 +995,13 @@ const CanvasRoom = () => {
         onOpenGift={handleOpenGift}
         onDeleteGift={handleDeleteGift}
         socketId={socket?.id}
+      />
+
+      <GiftRevealModal 
+        gift={revealGift}
+        isOpen={!!revealGift}
+        onClose={() => setRevealGift(null)}
+        userName={userName}
       />
 
       <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto">
