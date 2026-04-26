@@ -79,38 +79,71 @@ app.post('/api/music/upload', upload.single('audio'), async (req, res) => {
     if (!title || title === 'undefined' || !artist || artist === 'undefined') {
       try {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        const prompt = `Extract the song title and artist name from this filename: "${req.file.originalname}". 
-        Return ONLY a JSON object like this: {"title": "Song Name", "artist": "Artist Name"}. 
-        If you can't be sure, guess the most likely names. Remove extensions like .mp3.`;
+        const prompt = `Analyze this music filename: "${req.file.originalname}". 
+        Identify the Song Title, Artist, and the Movie/Album it belongs to.
+        Return ONLY a JSON object: 
+        {
+          "title": "Song Title", 
+          "artist": "Artist Name", 
+          "album": "Movie or Album Name",
+          "query": "Most specific search term for official cover art"
+        }`;
         
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text().replace(/```json|```/g, '').trim();
         const metadata = JSON.parse(text);
+        
         title = title || metadata.title;
         artist = artist || metadata.artist;
+        const album = metadata.album;
+        const smartQuery = metadata.query;
+
+        console.log('--- AI Metadata Extraction ---');
+        console.log('Detected Title:', title);
+        console.log('Detected Artist:', artist);
+        console.log('Detected Album:', album);
+        console.log('Smart Query:', smartQuery);
+
+        // 2. Fetch Thumbnail automatically from iTunes (Enhanced with AI Query)
+        let thumbnail = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400';
+        try {
+          // Priority 1: Use the AI-generated smart query
+          let itunesRes = await axios.get(`https://itunes.apple.com/search?term=${encodeURIComponent(smartQuery)}&media=music&limit=1`);
+          
+          // Priority 2: Title + Artist + Album
+          if (!itunesRes.data.results || itunesRes.data.results.length === 0) {
+            itunesRes = await axios.get(`https://itunes.apple.com/search?term=${encodeURIComponent(title + ' ' + artist + ' ' + (album || ''))}&media=music&limit=1`);
+          }
+
+          if (itunesRes.data.results && itunesRes.data.results.length > 0) {
+            thumbnail = itunesRes.data.results[0].artworkUrl100.replace('100x100', '600x600');
+            console.log('Thumbnail Found:', thumbnail);
+          }
+        } catch (e) { console.warn('Thumbnail fetch failed'); }
+
+        // 3. Upload to ImageKit
+        const uploadResponse = await imagekit.upload({
+          file: req.file.buffer,
+          fileName: `music_${Date.now()}_${req.file.originalname}`,
+          folder: '/music-library'
+        });
+
+        const newTrack = new MusicTrack({
+          title,
+          artist,
+          url: uploadResponse.url,
+          thumbnail,
+          uploadedBy
+        });
+
+        await newTrack.save();
+        res.json(newTrack);
+        return; // Exit after successful AI processing
       } catch (e) {
-        console.warn('Gemini metadata extraction failed:', e);
-        title = title || req.file.originalname.split('.')[0];
-        artist = artist || 'Unknown Artist';
+        console.error('Gemini metadata extraction failed:', e);
       }
     }
-
-    // 2. Fetch Thumbnail automatically from iTunes
-    let thumbnail = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400';
-    try {
-      const itunesRes = await axios.get(`https://itunes.apple.com/search?term=${encodeURIComponent(title + ' ' + artist)}&media=music&limit=1`);
-      if (itunesRes.data.results && itunesRes.data.results.length > 0) {
-        thumbnail = itunesRes.data.results[0].artworkUrl100.replace('100x100', '600x600');
-      }
-    } catch (e) { console.warn('Thumbnail fetch failed'); }
-
-    // 3. Upload to ImageKit
-    const uploadResponse = await imagekit.upload({
-      file: req.file.buffer,
-      fileName: `music_${Date.now()}_${req.file.originalname}`,
-      folder: '/music-library'
-    });
 
     const newTrack = new MusicTrack({
       title,

@@ -118,6 +118,8 @@ const MusicPlayer = ({ isOpen, onClose, roomId, socket, musicData, setMusicData,
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/music/upload`, { method: 'POST', body: formData });
       if (res.ok) {
         const track = await res.json();
+        console.log('--- Music Uploaded to Backend ---');
+        console.log('Stored Data:', track);
         playTrack({ url: track.url, title: track.title, artist: track.artist, thumbnail: track.thumbnail, source: 'Library' });
         setShowUpload(false);
       }
