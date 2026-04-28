@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, Gift, Music, ListMusic } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Share2, MessageSquare, Highlighter, Sparkles, Type, Undo2, Redo2, Hand, CircleDot, PaintBucket, Spline, History, Video, Wand2, Film, Gamepad2, MousePointer2, Image as ImageIcon, Grid3X3, Target, Shapes, Magnet, Smile, Sparkle, Heart, HeartOff, PenTool, StickyNote, Mail, Camera, Flower2, Stars, Paintbrush, LogOut, Plus, Layout, Gift, Music, ListMusic, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Toolbar = ({
@@ -106,7 +106,7 @@ const Toolbar = ({
     { id: 'laser', icon: Sparkles, label: 'Heart Laser' },
     { id: 'pencil', icon: Pencil, label: 'Love Pen ✍️' },
     { id: 'highlighter', icon: Highlighter, label: 'Glow Brush' },
-    { id: 'neon', icon: Wand2, label: 'Magic Sparks' },
+    { id: 'neon', icon: Sparkle, label: 'Magic Sparks' },
     { id: 'dotted', icon: CircleDot, label: 'Stardust' },
     { id: 'text', icon: Type, label: 'Love Letter 💌' },
     { id: 'sticky', icon: Mail, label: 'Hidden Message 🕵️' },
@@ -243,7 +243,7 @@ const Toolbar = ({
             <History className="size-4" />
           </button>
           <button onClick={onOpenVault} className="size-9 flex items-center justify-center rounded-full text-rose-300 hover:text-rose-500 transition-all" title="Memory Vault 🏛️">
-            <Camera className="size-4" />
+            <Archive className="size-4" />
           </button>
           <button onClick={onToggleCall} className={`size-9 flex items-center justify-center rounded-full transition-all ${inCall ? "bg-rose-500 text-white shadow-md shadow-rose-200" : "text-rose-300 hover:text-rose-500"}`} title="Together Now 💞">
             <Video className="size-4" />
@@ -278,7 +278,7 @@ const Toolbar = ({
             <Spline className={`size-4 ${showRopes ? 'animate-pulse' : ''}`} />
           </button>
           <button onClick={() => setAutoMode(!autoMode)} className={`size-9 flex items-center justify-center rounded-full transition-all ${autoMode ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Perfect Hearts">
-            <Wand2 className={`size-4 ${autoMode ? 'animate-spin-slow' : ''}`} />
+            <Shapes className={`size-4 ${autoMode ? 'animate-pulse' : ''}`} />
           </button>
           <button onClick={() => setShowGrid(!showGrid)} className={`size-9 flex items-center justify-center rounded-full transition-all ${showGrid ? "text-rose-500" : "text-rose-300 hover:text-rose-500"}`} title="Love Grid">
             <Grid3X3 className="size-4" />
@@ -310,7 +310,7 @@ const Toolbar = ({
               className={`size-9 flex items-center justify-center rounded-full transition-all ${isReactionWheelOpen ? "bg-rose-500 text-white" : "text-rose-300 hover:text-rose-500"}`}
               title="Send Love"
             >
-              <Smile className="size-4" />
+              <Heart className="size-4" />
             </button>
 
             {isReactionWheelOpen && (
